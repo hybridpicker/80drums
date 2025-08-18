@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom slider styling */
+@layer components {
+  .slider {
+    @apply appearance-none bg-transparent cursor-pointer;
+  }
+  
+  .slider::-webkit-slider-track {
+    @apply h-2 bg-neutral-200/60 rounded-full;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    @apply appearance-none h-4 w-4 rounded-full bg-gradient-to-br from-neutral-900 to-neutral-700 cursor-pointer border-2 border-white shadow-lg;
+    margin-top: -4px;
+  }
+  
+  .slider::-moz-range-track {
+    @apply h-2 bg-neutral-200/60 rounded-full border-none;
+  }
+  
+  .slider::-moz-range-thumb {
+    @apply h-4 w-4 rounded-full bg-gradient-to-br from-neutral-900 to-neutral-700 cursor-pointer border-2 border-white shadow-lg;
+    border: 2px solid white;
+  }
+  
+  .slider:disabled::-webkit-slider-thumb {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .slider:disabled::-moz-range-thumb {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+/* Smooth animations */
+* {
+  transition-property: transform, opacity, box-shadow, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Backdrop blur fallback */
+@supports not (backdrop-filter: blur(12px)) {
+  .backdrop-blur-sm {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+}

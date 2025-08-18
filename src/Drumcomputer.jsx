@@ -579,12 +579,17 @@ export default function Drumcomputer() {
     };
     
     return (
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-neutral-700">{name}</span>
-          <span className="text-xs text-neutral-500 font-mono">{pattern.filter((x) => !!x).length}/{pattern.length}</span>
+      <div className="mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-neutral-700">{name}</span>
+            <div className="w-1.5 h-1.5 bg-current rounded-full opacity-60"></div>
+          </div>
+          <span className="text-xs text-neutral-500 font-mono bg-neutral-100/60 px-2 py-1 rounded-lg backdrop-blur-sm">
+            {pattern.filter((x) => !!x).length}/{pattern.length}
+          </span>
         </div>
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${STEPS_PER_BAR * bars}, minmax(0, 1fr))` }}>
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${STEPS_PER_BAR * bars}, minmax(0, 1fr))` }}>
           {pattern.map((value, i) => {
             const barBreak = i % STEPS_PER_BAR === 0;
             const isBeat = i % 4 === 0;
@@ -599,31 +604,28 @@ export default function Drumcomputer() {
                   handleStepClick(i);
                 }}
                 className={[
-                  "h-10 rounded-lg border relative cursor-pointer select-none", // Removed transition-all
+                  "h-11 rounded-2xl border relative cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95", 
                   isActive
-                    ? `${colorClass} border-transparent shadow-sm` 
-                    : "bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50",
-                  isBeat && !isActive ? "border-neutral-300" : "",
-                  barBreak && i !== 0 ? "ml-1" : "",
-                  isPlayhead ? "ring-2 ring-yellow-400 ring-offset-1" : "",
+                    ? `${colorClass} border-transparent` 
+                    : "bg-white/80 backdrop-blur-sm border-neutral-200/60 hover:border-neutral-300/80 hover:bg-white/90",
+                  isBeat && !isActive ? "border-neutral-300/80 shadow-sm" : "",
+                  barBreak && i !== 0 ? "ml-2" : "",
+                  isPlayhead ? "ring-2 ring-yellow-400/80 ring-offset-2" : "",
                 ].join(" ")}
                 aria-label={`${name} step ${i + 1} ${isActive ? 'active' : 'inactive'}`}
                 type="button"
               >
-                {/* playhead indicator */}
-                {isPlayhead && (
-                  <span className="absolute -top-1 left-0 right-0 h-0.5 bg-yellow-400 rounded-full animate-pulse pointer-events-none" />
-                )}
+                {/* playhead indicator - nur Ring, keine Linie */}
                 {/* Step number on beat 1 of each bar */}
                 {i % STEPS_PER_BAR === 0 && (
-                  <span className="absolute -top-2 -left-1 text-[9px] text-neutral-400 font-mono pointer-events-none">
+                  <span className="absolute -top-3 -left-1 text-[9px] text-neutral-400 font-mono font-bold pointer-events-none bg-white/60 px-1 rounded">
                     {Math.floor(i / STEPS_PER_BAR) + 1}
                   </span>
                 )}
                 {/* Visual indicator for active steps */}
                 {isActive && (
                   <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="w-2 h-2 bg-white/30 rounded-full"></span>
+                    <span className="w-2.5 h-2.5 bg-white/40 rounded-full backdrop-blur-sm"></span>
                   </span>
                 )}
               </button>
@@ -635,29 +637,38 @@ export default function Drumcomputer() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-neutral-50 text-neutral-900 p-4 md:p-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-zinc-50 via-neutral-50 to-stone-50 text-neutral-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-600 bg-clip-text text-transparent">
-            Drumcomputer <span className="text-neutral-500 font-normal text-lg">(80s/90s)</span>
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+        <header className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-700 rounded-xl flex items-center justify-center">
+              <div className="w-3 h-3 rounded-full bg-white/90"></div>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-600 bg-clip-text text-transparent">
+              Drumcomputer
+            </h1>
+            <span className="px-2 py-1 bg-neutral-100/80 backdrop-blur-sm text-neutral-600 text-xs rounded-full font-medium border border-neutral-200/50">80s/90s</span>
+          </div>
+          <p className="text-sm text-neutral-500">
             Live editing • Visual playhead • Swing • Practice Gaps • {totalSteps} steps
           </p>
         </header>
 
         {/* Transport & global controls */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-neutral-700">Transport</span>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                Transport
+              </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleTapTempo}
-                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${
+                  className={`px-3 py-2 rounded-2xl text-sm font-medium transition-all duration-200 active:scale-95 ${
                     tapActive 
-                      ? "bg-yellow-400 text-neutral-900 shadow-lg shadow-yellow-400/30" 
-                      : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
+                      ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-neutral-900 shadow-lg shadow-yellow-400/25" 
+                      : "bg-neutral-100/80 hover:bg-neutral-200/80 text-neutral-700 backdrop-blur-sm"
                   }`}
                   title={`Tap tempo (T)${tapTimes.length > 0 ? ` - ${tapTimes.length} taps` : ' - tap at least 2 times'}`}
                 >
@@ -665,10 +676,10 @@ export default function Drumcomputer() {
                 </button>
                 <button
                   onClick={handleToggle}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                  className={`px-6 py-2.5 rounded-2xl font-semibold transition-all duration-200 active:scale-95 ${
                     isPlaying 
-                      ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20" 
-                      : "bg-black text-white hover:bg-neutral-800 shadow-lg shadow-black/20"
+                      ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25" 
+                      : "bg-gradient-to-r from-neutral-900 to-neutral-800 text-white hover:from-neutral-800 hover:to-neutral-700 shadow-lg shadow-neutral-900/25"
                   }`}
                   title="Start/Stop (Space)"
                 >
@@ -677,56 +688,87 @@ export default function Drumcomputer() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => loadPreset("Classic 1")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Classic 1</button>
-              <button onClick={() => loadPreset("Classic 2")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Classic 2</button>
-              <button onClick={() => loadPreset("New Jack")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">New Jack</button>
-              <button onClick={() => loadPreset("Breakbeat")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Breakbeat</button>
-              <button onClick={() => loadPreset("Four Floor")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Four Floor</button>
-              <button onClick={() => loadPreset("Jungle")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Jungle</button>
-              <button onClick={() => loadPreset("Trap")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Trap</button>
-              <button onClick={() => loadPreset("Ambient")} className="text-xs px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors">Ambient</button>
-              <button onClick={clearAll} className="col-span-2 text-xs px-3 py-1.5 rounded-lg border border-neutral-300 hover:bg-neutral-100 text-neutral-600 transition-colors">Clear All</button>
+              <button onClick={() => loadPreset("Classic 1")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Classic 1</button>
+              <button onClick={() => loadPreset("Classic 2")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Classic 2</button>
+              <button onClick={() => loadPreset("New Jack")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">New Jack</button>
+              <button onClick={() => loadPreset("Breakbeat")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Breakbeat</button>
+              <button onClick={() => loadPreset("Four Floor")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Four Floor</button>
+              <button onClick={() => loadPreset("Jungle")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Jungle</button>
+              <button onClick={() => loadPreset("Trap")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Trap</button>
+              <button onClick={() => loadPreset("Ambient")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Ambient</button>
+              <button onClick={clearAll} className="col-span-2 text-xs px-3 py-2 rounded-xl border border-red-200/60 hover:bg-red-50/60 text-red-600 transition-all duration-200 backdrop-blur-sm">Clear All</button>
             </div>
           </div>
 
-          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
-            <div className="text-sm font-medium text-neutral-700 mb-3">Tempo & Swing</div>
-            <div className="mb-3">
-              <label className="text-xs text-neutral-600 flex justify-between">
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              Tempo & Swing
+            </div>
+            <div className="mb-4">
+              <label className="text-xs text-neutral-600 flex justify-between mb-2">
                 <span>Tempo</span>
-                <span className="font-mono font-medium text-neutral-900">{bpm} BPM</span>
+                <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-2 py-1 rounded-lg">{bpm} BPM</span>
               </label>
-              <input 
-                type="range" 
-                min={50} 
-                max={220} 
-                value={bpm} 
-                onChange={(e) => setBpm(parseInt(e.target.value))} 
-                className="w-full mt-1 accent-neutral-900" 
-              />
+              <div className="relative">
+                <input 
+                  type="range" 
+                  min={50} 
+                  max={220} 
+                  value={bpm} 
+                  onChange={(e) => setBpm(parseInt(e.target.value))} 
+                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
+                />
+                <style jsx>{`
+                  .slider::-webkit-slider-thumb {
+                    appearance: none;
+                    height: 18px;
+                    width: 18px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #1f2937, #374151);
+                    cursor: pointer;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                    border: 2px solid white;
+                  }
+                  .slider::-moz-range-thumb {
+                    height: 18px;
+                    width: 18px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #1f2937, #374151);
+                    cursor: pointer;
+                    border: 2px solid white;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                  }
+                `}</style>
+              </div>
             </div>
             <div>
-              <label className="text-xs text-neutral-600 flex justify-between">
+              <label className="text-xs text-neutral-600 flex justify-between mb-2">
                 <span>Swing</span>
-                <span className="font-mono font-medium text-neutral-900">{swing}%</span>
+                <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-2 py-1 rounded-lg">{swing}%</span>
               </label>
-              <input 
-                type="range" 
-                min={0} 
-                max={60} 
-                value={swing} 
-                onChange={(e) => setSwing(parseInt(e.target.value))} 
-                className="w-full mt-1 accent-neutral-900" 
-              />
+              <div className="relative">
+                <input 
+                  type="range" 
+                  min={0} 
+                  max={60} 
+                  value={swing} 
+                  onChange={(e) => setSwing(parseInt(e.target.value))} 
+                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
-            <div className="text-sm font-medium text-neutral-700 mb-3">Loop & Gaps</div>
-            <div className="mb-3">
-              <label className="text-xs text-neutral-600 flex justify-between">
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              Loop & Gaps
+            </div>
+            <div className="mb-4">
+              <label className="text-xs text-neutral-600 flex justify-between mb-2">
                 <span>Bars</span>
-                <span className="font-mono font-medium text-neutral-900">{bars}</span>
+                <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-2 py-1 rounded-lg">{bars}</span>
               </label>
               <input 
                 type="range" 
@@ -734,22 +776,24 @@ export default function Drumcomputer() {
                 max={MAX_BARS} 
                 value={bars} 
                 onChange={(e) => setBars(parseInt(e.target.value))} 
-                className="w-full mt-1 accent-neutral-900" 
+                className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
               />
             </div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-neutral-600">Practice Gaps</label>
-              <input 
-                type="checkbox" 
-                checked={gapsEnabled} 
-                onChange={(e) => setGapsEnabled(e.target.checked)} 
-                className="accent-neutral-900"
-              />
+            <div className="flex items-center justify-between mb-3 p-2 bg-neutral-100/40 rounded-xl backdrop-blur-sm">
+              <label className="text-xs font-medium text-neutral-700">Practice Gaps</label>
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  checked={gapsEnabled} 
+                  onChange={(e) => setGapsEnabled(e.target.checked)} 
+                  className="w-4 h-4 text-neutral-900 bg-neutral-100 border-neutral-300 rounded focus:ring-neutral-500 focus:ring-2"
+                />
+              </div>
             </div>
-            <div className={`grid grid-cols-2 gap-2 ${gapsEnabled ? 'opacity-100' : 'opacity-40'}`}>
+            <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${gapsEnabled ? 'opacity-100' : 'opacity-40'}`}>
               <div>
-                <label className="text-xs text-neutral-600">
-                  Every: {gapEveryBars}
+                <label className="text-xs text-neutral-600 mb-1 block">
+                  Every: <span className="font-mono font-bold">{gapEveryBars}</span>
                 </label>
                 <input 
                   type="range" 
@@ -757,13 +801,13 @@ export default function Drumcomputer() {
                   max={8} 
                   value={gapEveryBars} 
                   onChange={(e) => setGapEveryBars(parseInt(e.target.value))} 
-                  className="w-full accent-neutral-900" 
+                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
                   disabled={!gapsEnabled}
                 />
               </div>
               <div>
-                <label className="text-xs text-neutral-600">
-                  Gap: {gapLengthBars}
+                <label className="text-xs text-neutral-600 mb-1 block">
+                  Gap: <span className="font-mono font-bold">{gapLengthBars}</span>
                 </label>
                 <input 
                   type="range" 
@@ -771,12 +815,12 @@ export default function Drumcomputer() {
                   max={4} 
                   value={gapLengthBars} 
                   onChange={(e) => setGapLengthBars(parseInt(e.target.value))} 
-                  className="w-full accent-neutral-900" 
+                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
                   disabled={!gapsEnabled}
                 />
               </div>
             </div>
-            <p className="text-[10px] text-neutral-500 mt-2">Silence pattern for timing practice</p>
+            <p className="text-[10px] text-neutral-500 mt-3 bg-neutral-50/60 p-2 rounded-lg">Silence pattern for timing practice</p>
           </div>
 
           <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
@@ -824,40 +868,55 @@ export default function Drumcomputer() {
                 <button onClick={() => setDroneNote(40)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>E2</button>
                 <button onClick={() => setDroneNote(41)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>F2</button>
                 <button onClick={() => setDroneNote(42)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>F#2</button>
-                <button onClick={() => setDroneNote(43)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>G2</button>
-                <button onClick={() => setDroneNote(44)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>G#2</button>
+                <button onClick={() => setDroneNote(43)} className="text-xs px-2 py-1.5 rounded-lg bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40" disabled={!droneEnabled}>G2</button>
+                <button onClick={() => setDroneNote(44)} className="text-xs px-2 py-1.5 rounded-lg bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40" disabled={!droneEnabled}>G#2</button>
               </div>
             </div>
-            <p className="text-[10px] text-neutral-500 mt-2">Bass drone for tonal reference</p>
+            <p className="text-[10px] text-neutral-500 mt-3 bg-neutral-50/60 p-2 rounded-lg">Bass drone for tonal reference</p>
           </div>
         </div>
 
         {/* Sequencer */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-neutral-700">Pattern Sequencer</h2>
-            <div className="flex items-center gap-2 text-xs text-neutral-500">
-              <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+        <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
+              <h2 className="text-sm font-semibold text-neutral-700">Pattern Sequencer</h2>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-500 bg-neutral-100/40 px-3 py-2 rounded-full backdrop-blur-sm">
+              <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
               <span>Playhead</span>
             </div>
           </div>
-          <TrackGrid name="Kick" pattern={kick} setPattern={setKick} colorClass="bg-emerald-500 text-white" playhead={uiStep} />
-          <TrackGrid name="Snare" pattern={snare} setPattern={setSnare} colorClass="bg-rose-500 text-white" playhead={uiStep} />
-          <TrackGrid name="Hi-Hat" pattern={hat} setPattern={setHat} colorClass="bg-sky-500 text-white" playhead={uiStep} />
-          <TrackGrid name="Cymbal" pattern={cymbal} setPattern={setCymbal} colorClass="bg-amber-500 text-white" playhead={uiStep} />
-          <div className="mt-4 pt-4 border-t border-neutral-100">
-            <p className="text-[11px] text-neutral-500">
-              💡 <strong>Tip:</strong> Enable swing for groove • Use gaps to practice internal timing • Live-edit while playing
-            </p>
+          <TrackGrid name="Kick" pattern={kick} setPattern={setKick} colorClass="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25" playhead={uiStep} />
+          <TrackGrid name="Snare" pattern={snare} setPattern={setSnare} colorClass="bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/25" playhead={uiStep} />
+          <TrackGrid name="Hi-Hat" pattern={hat} setPattern={setHat} colorClass="bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25" playhead={uiStep} />
+          <TrackGrid name="Cymbal" pattern={cymbal} setPattern={setCymbal} colorClass="bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25" playhead={uiStep} />
+          <div className="mt-6 pt-6 border-t border-neutral-200/60">
+            <div className="flex items-center gap-2 text-[11px] text-neutral-500 bg-gradient-to-r from-neutral-50/80 to-neutral-100/80 p-3 rounded-2xl backdrop-blur-sm border border-neutral-200/40">
+              <span className="text-lg">💡</span>
+              <div>
+                <strong>Tip:</strong> Enable swing for groove • Use gaps to practice internal timing • Live-edit while playing
+              </div>
+            </div>
           </div>
         </div>
 
-        <footer className="mt-6 text-center text-[11px] text-neutral-500">
-          <p>Web Audio API • React • Tailwind CSS • No samples required</p>
-          <p className="mt-1">
-            Keyboard: <kbd className="px-1.5 py-0.5 bg-neutral-200 text-neutral-700 rounded text-[10px] font-mono">Space</kbd> Start/Stop • 
-            <kbd className="px-1.5 py-0.5 bg-neutral-200 text-neutral-700 rounded text-[10px] font-mono ml-1">T</kbd> Tap Tempo
-          </p>
+        <footer className="mt-8 text-center text-[11px] text-neutral-500">
+          <div className="bg-neutral-100/40 backdrop-blur-sm rounded-2xl p-4 border border-neutral-200/40">
+            <p className="mb-2">Drumcomputer by <strong>Lukas Schönsgibl</strong> • <a href="https://schoensgibl.com" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-700 transition-colors">schoensgibl.com</a></p>
+            <p className="mb-2">Vibe Coded with Claude</p>
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-1 bg-white/70 text-neutral-700 rounded-lg text-[10px] font-mono border border-neutral-200/60 shadow-sm">Space</kbd>
+                <span>Start/Stop</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-1 bg-white/70 text-neutral-700 rounded-lg text-[10px] font-mono border border-neutral-200/60 shadow-sm">T</kbd>
+                <span>Tap Tempo</span>
+              </div>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
