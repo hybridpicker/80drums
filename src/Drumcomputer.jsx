@@ -709,14 +709,7 @@ export default function Drumcomputer() {
                   </span>
                 )}
                 
-                {/* Visual indicator for active steps */}
-                {isActive && (
-                  <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className={`bg-white/40 rounded-full ${
-                      isMobile ? "w-3 h-3" : "w-2 h-2 sm:w-2.5 sm:h-2.5"
-                    }`}></span>
-                  </span>
-                )}
+                {/* Visual indicator for active steps - REMOVED for cleaner look */}
               </button>
             );
           })}
