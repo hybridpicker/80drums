@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-// Minimalist 80s/90s-inspired Drumcomputer
+// Minimalist 80s/90s-inspired Drumcomputer - AUTO-DEPLOYMENT TEST
 // Single-file React component using the Web Audio API.
 // TailwindCSS classes are used for styling (no external assets).
 // — Features —
