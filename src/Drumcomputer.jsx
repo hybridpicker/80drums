@@ -123,11 +123,29 @@ export default function Drumcomputer() {
   const droneOscRef = useRef(null);
   const droneGainRef = useRef(null);
 
+  // Collapsible sections state for mobile - DEFAULT COLLAPSED ON MOBILE
+  const [sectionsCollapsed, setSectionsCollapsed] = useState({
+    grooves: true,  // Default collapsed
+    tempo: true,    // Default collapsed
+    loop: true,     // Default collapsed
+    drone: true     // Default collapsed
+  });
+
+  // Mobile bar navigation for sequencer
+  const [activeMobileBar, setActiveMobileBar] = useState(0);
+
+  const toggleSection = (section) => {
+    setSectionsCollapsed(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   // Patterns (state + refs to avoid stale-closure during playback)
   const [kick, setKick] = useState(() => presets["Classic 1"]({ bars: 2 }).kick);
   const [snare, setSnare] = useState(() => presets["Classic 1"]({ bars: 2 }).snare);
   const [hat, setHat] = useState(() => presets["Classic 1"]({ bars: 2 }).hat);
-  const [cymbal, setCymbal] = useState(() => emptyPattern(2)); // New cymbal track
+  const [cymbal, setCymbal] = useState(() => presets["Classic 1"]({ bars: 2 }).cymbal || seed([0], 2)); // Ensure cymbal is active
   const kickRef = useRef(kick);
   const snareRef = useRef(snare);
   const hatRef = useRef(hat);
@@ -183,6 +201,16 @@ export default function Drumcomputer() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isPlaying]); // Dependency on isPlaying to ensure correct toggle state
+
+  // Update active mobile bar based on playhead position
+  useEffect(() => {
+    if (isPlaying && bars > 1) {
+      const currentBar = Math.floor(uiStep / STEPS_PER_BAR);
+      if (currentBar !== activeMobileBar && currentBar < bars) {
+        setActiveMobileBar(currentBar);
+      }
+    }
+  }, [uiStep, isPlaying, bars, activeMobileBar]);
 
   // Recreate/resize patterns when number of bars changes
   useEffect(() => {
@@ -569,7 +597,7 @@ export default function Drumcomputer() {
     cymbalRef.current = p.cymbal || emptyPattern(bars);
   };
 
-  // Simple step grid component
+  // Simple step grid component with mobile bar tabs
   const TrackGrid = ({ name, pattern, setPattern, colorClass, playhead }) => {
     // Calculate actual playhead position based on current bars
     const displayPlayhead = isPlaying ? playhead : -1;
@@ -577,55 +605,116 @@ export default function Drumcomputer() {
     const handleStepClick = (index) => {
       toggleStep(name, setPattern, index);
     };
+
+    // Mobile: Show only current bar, Desktop: Show all bars
+    const isMobile = pattern.length > 16; // More than 1 bar = use mobile tabs
+    const currentBarPattern = isMobile 
+      ? pattern.slice(activeMobileBar * STEPS_PER_BAR, (activeMobileBar + 1) * STEPS_PER_BAR)
+      : pattern;
+    const patternOffset = isMobile ? activeMobileBar * STEPS_PER_BAR : 0;
     
     return (
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-700">{name}</span>
-            <div className="w-1.5 h-1.5 bg-current rounded-full opacity-60"></div>
+      <div className="mb-3 sm:mb-4 md:mb-5">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-xs sm:text-sm font-semibold text-neutral-700">{name}</span>
+            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-current rounded-full opacity-60"></div>
           </div>
-          <span className="text-xs text-neutral-500 font-mono bg-neutral-100/60 px-2 py-1 rounded-lg backdrop-blur-sm">
+          <span className="text-[9px] sm:text-xs text-neutral-500 font-mono bg-neutral-100/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-center min-w-[2rem] sm:min-w-[2.5rem] backdrop-blur-sm">
             {pattern.filter((x) => !!x).length}/{pattern.length}
           </span>
         </div>
-        <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${STEPS_PER_BAR * bars}, minmax(0, 1fr))` }}>
-          {pattern.map((value, i) => {
-            const barBreak = i % STEPS_PER_BAR === 0;
+        
+        {/* Mobile Bar Tabs - only show if more than 1 bar */}
+        {isMobile && (
+          <div className="flex gap-1 mb-3 lg:hidden">
+            {Array.from({ length: bars }, (_, barIndex) => (
+              <button
+                key={barIndex}
+                onClick={() => setActiveMobileBar(barIndex)}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  activeMobileBar === barIndex
+                    ? 'bg-neutral-900 text-white shadow-lg'
+                    : 'bg-neutral-100/60 text-neutral-700 hover:bg-neutral-200/60'
+                }`}
+              >
+                Bar {barIndex + 1}
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {/* Step Grid */}
+        <div 
+          className="grid gap-1 sm:gap-1.5" 
+          style={{ 
+            gridTemplateColumns: `repeat(${currentBarPattern.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {currentBarPattern.map((value, i) => {
+            const actualIndex = patternOffset + i;
             const isBeat = i % 4 === 0;
-            const isPlayhead = displayPlayhead === i;
-            const isActive = value === 1 || value === true; // Handle both 1 and true
+            const isPlayhead = displayPlayhead === actualIndex;
+            const isActive = value === 1 || value === true;
+            
+            // Desktop: Show bar separators
+            const isBarStart = !isMobile && actualIndex % STEPS_PER_BAR === 0 && actualIndex > 0;
             
             return (
               <button
-                key={`${name}-${i}-${value}`} // Include value in key to force re-render
+                key={`${name}-${actualIndex}-${value}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleStepClick(i);
+                  handleStepClick(actualIndex);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleStepClick(actualIndex);
                 }}
                 className={[
-                  "h-11 rounded-2xl border relative cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95", 
+                  // Large buttons for mobile tabs, responsive for desktop
+                  isMobile 
+                    ? "h-12 sm:h-14 rounded-xl" 
+                    : pattern.length <= 16 
+                      ? "h-10 sm:h-12 md:h-14 rounded-lg sm:rounded-xl" 
+                      : "h-8 sm:h-10 md:h-12 rounded-md sm:rounded-lg",
+                  "border relative cursor-pointer select-none transition-all duration-150",
+                  // Active/inactive states
                   isActive
-                    ? `${colorClass} border-transparent` 
-                    : "bg-white/80 backdrop-blur-sm border-neutral-200/60 hover:border-neutral-300/80 hover:bg-white/90",
+                    ? `${colorClass} border-transparent shadow-sm` 
+                    : "bg-white/80 backdrop-blur-sm border-neutral-200/60 hover:border-neutral-300/80 hover:bg-white/90 active:bg-neutral-100/60",
+                  // Beat emphasis
                   isBeat && !isActive ? "border-neutral-300/80 shadow-sm" : "",
-                  barBreak && i !== 0 ? "ml-2" : "",
-                  isPlayhead ? "ring-2 ring-yellow-400/80 ring-offset-2" : "",
+                  // Playhead ring
+                  isPlayhead ? "ring-2 ring-yellow-400/80 ring-offset-1 sm:ring-offset-2" : "",
+                  // Touch states
+                  "active:scale-95 touch-manipulation",
+                  // Desktop bar separation with border
+                  !isMobile && isBarStart ? "border-l-4 border-l-neutral-300/60" : "",
                 ].join(" ")}
-                aria-label={`${name} step ${i + 1} ${isActive ? 'active' : 'inactive'}`}
+                aria-label={`${name} step ${actualIndex + 1} ${isActive ? 'active' : 'inactive'}`}
                 type="button"
               >
-                {/* playhead indicator - nur Ring, keine Linie */}
-                {/* Step number on beat 1 of each bar */}
-                {i % STEPS_PER_BAR === 0 && (
-                  <span className="absolute -top-3 -left-1 text-[9px] text-neutral-400 font-mono font-bold pointer-events-none bg-white/60 px-1 rounded">
-                    {Math.floor(i / STEPS_PER_BAR) + 1}
+                {/* Beat number indicator */}
+                {i % 4 === 0 && (
+                  <span className="absolute -top-2 sm:-top-3 left-0 text-[8px] sm:text-[9px] text-neutral-400 font-mono font-bold pointer-events-none bg-white/60 px-0.5 sm:px-1 rounded">
+                    {(isMobile ? i : actualIndex % STEPS_PER_BAR) + 1}
                   </span>
                 )}
+                
+                {/* Desktop: Bar number indicator */}
+                {!isMobile && actualIndex % STEPS_PER_BAR === 0 && (
+                  <span className="absolute -top-6 left-0 text-[10px] text-neutral-500 font-mono font-bold pointer-events-none bg-gradient-to-r from-neutral-100 to-neutral-50 px-1.5 py-0.5 rounded-full border border-neutral-200/60 shadow-sm hidden lg:block">
+                    Bar {Math.floor(actualIndex / STEPS_PER_BAR) + 1}
+                  </span>
+                )}
+                
                 {/* Visual indicator for active steps */}
                 {isActive && (
                   <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="w-2.5 h-2.5 bg-white/40 rounded-full backdrop-blur-sm"></span>
+                    <span className={`bg-white/40 rounded-full ${
+                      isMobile ? "w-3 h-3" : "w-2 h-2 sm:w-2.5 sm:h-2.5"
+                    }`}></span>
                   </span>
                 )}
               </button>
@@ -637,46 +726,55 @@ export default function Drumcomputer() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-zinc-50 via-neutral-50 to-stone-50 text-neutral-900 p-4 md:p-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-zinc-50 via-neutral-50 to-stone-50 text-neutral-900 p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-700 rounded-xl flex items-center justify-center">
-              <div className="w-3 h-3 rounded-full bg-white/90"></div>
+        <header className="mb-4 sm:mb-6 md:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-700 rounded-lg sm:rounded-xl flex items-center justify-center">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white/90"></div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-600 bg-clip-text text-transparent">
               Drumcomputer
             </h1>
-            <span className="px-2 py-1 bg-neutral-100/80 backdrop-blur-sm text-neutral-600 text-xs rounded-full font-medium border border-neutral-200/50">80s/90s</span>
+            <span className="px-2 py-1 bg-neutral-100/80 backdrop-blur-sm text-neutral-600 text-xs rounded-full font-medium border border-neutral-200/50 hidden sm:inline">80s/90s</span>
           </div>
-          <p className="text-sm text-neutral-500">
-            Live editing • Visual playhead • Swing • Practice Gaps • {totalSteps} steps
+          <p className="text-xs sm:text-sm text-neutral-500">
+            <span className="hidden sm:inline">Live editing • Visual playhead • Swing • Practice Gaps • </span>{totalSteps} steps
           </p>
         </header>
 
         {/* Transport & global controls */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                Transport
-              </span>
-              <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+          {/* Grooves Section */}
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <button 
+                onClick={() => toggleSection('grooves')}
+                className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-700 hover:text-neutral-900 transition-colors lg:cursor-default"
+              >
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full"></div>
+                <span className="hidden sm:inline lg:inline">Grooves</span>
+                <span className="sm:hidden lg:hidden">Grooves</span>
+                <span className="text-neutral-400 lg:hidden">
+                  {sectionsCollapsed.grooves ? '▼' : '▲'}
+                </span>
+              </button>
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={handleTapTempo}
-                  className={`px-3 py-2 rounded-2xl text-sm font-medium transition-all duration-200 active:scale-95 ${
+                  className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-2xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-95 ${
                     tapActive 
                       ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-neutral-900 shadow-lg shadow-yellow-400/25" 
                       : "bg-neutral-100/80 hover:bg-neutral-200/80 text-neutral-700 backdrop-blur-sm"
                   }`}
                   title={`Tap tempo (T)${tapTimes.length > 0 ? ` - ${tapTimes.length} taps` : ' - tap at least 2 times'}`}
                 >
-                  Tap {tapTimes.length > 0 && `(${tapTimes.length})`}
+                  <span className="sm:hidden">T</span>
+                  <span className="hidden sm:inline">Tap {tapTimes.length > 0 && `(${tapTimes.length})`}</span>
                 </button>
                 <button
                   onClick={handleToggle}
-                  className={`px-6 py-2.5 rounded-2xl font-semibold transition-all duration-200 active:scale-95 ${
+                  className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-2xl text-sm sm:text-base font-semibold transition-all duration-200 active:scale-95 ${
                     isPlaying 
                       ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25" 
                       : "bg-gradient-to-r from-neutral-900 to-neutral-800 text-white hover:from-neutral-800 hover:to-neutral-700 shadow-lg shadow-neutral-900/25"
@@ -687,233 +785,257 @@ export default function Drumcomputer() {
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => loadPreset("Classic 1")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Classic 1</button>
-              <button onClick={() => loadPreset("Classic 2")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Classic 2</button>
-              <button onClick={() => loadPreset("New Jack")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">New Jack</button>
-              <button onClick={() => loadPreset("Breakbeat")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Breakbeat</button>
-              <button onClick={() => loadPreset("Four Floor")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Four Floor</button>
-              <button onClick={() => loadPreset("Jungle")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Jungle</button>
-              <button onClick={() => loadPreset("Trap")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Trap</button>
-              <button onClick={() => loadPreset("Ambient")} className="text-xs px-3 py-2 rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Ambient</button>
-              <button onClick={clearAll} className="col-span-2 text-xs px-3 py-2 rounded-xl border border-red-200/60 hover:bg-red-50/60 text-red-600 transition-all duration-200 backdrop-blur-sm">Clear All</button>
+            <div className={`grid grid-cols-2 gap-1 sm:gap-2 transition-all duration-300 overflow-hidden ${
+              sectionsCollapsed.grooves ? 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100' : 'max-h-96 opacity-100'
+            }`}>
+              <button onClick={() => loadPreset("Classic 1")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Classic 1</button>
+              <button onClick={() => loadPreset("Classic 2")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Classic 2</button>
+              <button onClick={() => loadPreset("New Jack")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">New Jack</button>
+              <button onClick={() => loadPreset("Breakbeat")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Breakbeat</button>
+              <button onClick={() => loadPreset("Four Floor")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Four Floor</button>
+              <button onClick={() => loadPreset("Jungle")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Jungle</button>
+              <button onClick={() => loadPreset("Trap")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Trap</button>
+              <button onClick={() => loadPreset("Ambient")} className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40">Ambient</button>
+              <button onClick={clearAll} className="col-span-2 text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-red-200/60 hover:bg-red-50/60 text-red-600 transition-all duration-200 backdrop-blur-sm">Clear All</button>
             </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              Tempo & Swing
-            </div>
-            <div className="mb-4">
-              <label className="text-xs text-neutral-600 flex justify-between mb-2">
-                <span>Tempo</span>
-                <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-2 py-1 rounded-lg">{bpm} BPM</span>
-              </label>
-              <div className="relative">
-                <input 
-                  type="range" 
-                  min={50} 
-                  max={220} 
-                  value={bpm} 
-                  onChange={(e) => setBpm(parseInt(e.target.value))} 
-                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
-                />
-                <style jsx>{`
-                  .slider::-webkit-slider-thumb {
-                    appearance: none;
-                    height: 18px;
-                    width: 18px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #1f2937, #374151);
-                    cursor: pointer;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-                    border: 2px solid white;
-                  }
-                  .slider::-moz-range-thumb {
-                    height: 18px;
-                    width: 18px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #1f2937, #374151);
-                    cursor: pointer;
-                    border: 2px solid white;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-                  }
-                `}</style>
+          {/* Tempo & Swing Section */}
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200">
+            <button 
+              onClick={() => toggleSection('tempo')}
+              className="flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold text-neutral-700 hover:text-neutral-900 transition-colors lg:cursor-default"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full"></div>
+                <span className="hidden sm:inline lg:inline">Tempo & Swing</span>
+                <span className="sm:hidden lg:hidden">Tempo</span>
               </div>
-            </div>
-            <div>
-              <label className="text-xs text-neutral-600 flex justify-between mb-2">
-                <span>Swing</span>
-                <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-2 py-1 rounded-lg">{swing}%</span>
-              </label>
-              <div className="relative">
-                <input 
-                  type="range" 
-                  min={0} 
-                  max={60} 
-                  value={swing} 
-                  onChange={(e) => setSwing(parseInt(e.target.value))} 
-                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              Loop & Gaps
-            </div>
-            <div className="mb-4">
-              <label className="text-xs text-neutral-600 flex justify-between mb-2">
-                <span>Bars</span>
-                <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-2 py-1 rounded-lg">{bars}</span>
-              </label>
-              <input 
-                type="range" 
-                min={1} 
-                max={MAX_BARS} 
-                value={bars} 
-                onChange={(e) => setBars(parseInt(e.target.value))} 
-                className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
-              />
-            </div>
-            <div className="flex items-center justify-between mb-3 p-2 bg-neutral-100/40 rounded-xl backdrop-blur-sm">
-              <label className="text-xs font-medium text-neutral-700">Practice Gaps</label>
-              <div className="relative">
-                <input 
-                  type="checkbox" 
-                  checked={gapsEnabled} 
-                  onChange={(e) => setGapsEnabled(e.target.checked)} 
-                  className="w-4 h-4 text-neutral-900 bg-neutral-100 border-neutral-300 rounded focus:ring-neutral-500 focus:ring-2"
-                />
-              </div>
-            </div>
-            <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${gapsEnabled ? 'opacity-100' : 'opacity-40'}`}>
-              <div>
-                <label className="text-xs text-neutral-600 mb-1 block">
-                  Every: <span className="font-mono font-bold">{gapEveryBars}</span>
+              <span className="text-neutral-400 lg:hidden">
+                {sectionsCollapsed.tempo ? '▼' : '▲'}
+              </span>
+            </button>
+            <div className={`transition-all duration-300 overflow-hidden ${
+              sectionsCollapsed.tempo ? 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100' : 'max-h-96 opacity-100'
+            }`}>
+              <div className="mb-3 sm:mb-4">
+                <label className="text-[10px] sm:text-xs text-neutral-600 flex justify-between mb-2">
+                  <span>Tempo</span>
+                  <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs">{bpm} BPM</span>
                 </label>
-                <input 
-                  type="range" 
-                  min={2} 
-                  max={8} 
-                  value={gapEveryBars} 
-                  onChange={(e) => setGapEveryBars(parseInt(e.target.value))} 
-                  className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
-                  disabled={!gapsEnabled}
-                />
+                <div className="relative">
+                  <input 
+                    type="range" 
+                    min={50} 
+                    max={220} 
+                    value={bpm} 
+                    onChange={(e) => setBpm(parseInt(e.target.value))} 
+                    className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
+                  />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-neutral-600 mb-1 block">
-                  Gap: <span className="font-mono font-bold">{gapLengthBars}</span>
+                <label className="text-[10px] sm:text-xs text-neutral-600 flex justify-between mb-2">
+                  <span>Swing</span>
+                  <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs">{swing}%</span>
+                </label>
+                <div className="relative">
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={60} 
+                    value={swing} 
+                    onChange={(e) => setSwing(parseInt(e.target.value))} 
+                    className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Loop & Gaps Section */}
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200">
+            <button 
+              onClick={() => toggleSection('loop')}
+              className="flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold text-neutral-700 hover:text-neutral-900 transition-colors lg:cursor-default"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full"></div>
+                <span className="hidden sm:inline lg:inline">Loop & Gaps</span>
+                <span className="sm:hidden lg:hidden">Loop</span>
+              </div>
+              <span className="text-neutral-400 lg:hidden">
+                {sectionsCollapsed.loop ? '▼' : '▲'}
+              </span>
+            </button>
+            <div className={`transition-all duration-300 overflow-hidden ${
+              sectionsCollapsed.loop ? 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100' : 'max-h-96 opacity-100'
+            }`}>
+              <div className="mb-3 sm:mb-4">
+                <label className="text-[10px] sm:text-xs text-neutral-600 flex justify-between mb-2">
+                  <span>Bars</span>
+                  <span className="font-mono font-bold text-neutral-900 bg-neutral-100/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs">{bars}</span>
                 </label>
                 <input 
                   type="range" 
                   min={1} 
-                  max={4} 
-                  value={gapLengthBars} 
-                  onChange={(e) => setGapLengthBars(parseInt(e.target.value))} 
+                  max={MAX_BARS} 
+                  value={bars} 
+                  onChange={(e) => setBars(parseInt(e.target.value))} 
                   className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
-                  disabled={!gapsEnabled}
                 />
               </div>
+              <div className="flex items-center justify-between mb-2 sm:mb-3 p-2 bg-neutral-100/40 rounded-lg sm:rounded-xl backdrop-blur-sm">
+                <label className="text-[10px] sm:text-xs font-medium text-neutral-700">Practice Gaps</label>
+                <div className="relative">
+                  <input 
+                    type="checkbox" 
+                    checked={gapsEnabled} 
+                    onChange={(e) => setGapsEnabled(e.target.checked)} 
+                    className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-900 bg-neutral-100 border-neutral-300 rounded focus:ring-neutral-500 focus:ring-2"
+                  />
+                </div>
+              </div>
+              <div className={`grid grid-cols-2 gap-2 sm:gap-3 transition-all duration-200 ${gapsEnabled ? 'opacity-100' : 'opacity-40'}`}>
+                <div>
+                  <label className="text-[10px] sm:text-xs text-neutral-600 mb-1 block">
+                    Every: <span className="font-mono font-bold">{gapEveryBars}</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min={2} 
+                    max={8} 
+                    value={gapEveryBars} 
+                    onChange={(e) => setGapEveryBars(parseInt(e.target.value))} 
+                    className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
+                    disabled={!gapsEnabled}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] sm:text-xs text-neutral-600 mb-1 block">
+                    Gap: <span className="font-mono font-bold">{gapLengthBars}</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min={1} 
+                    max={4} 
+                    value={gapLengthBars} 
+                    onChange={(e) => setGapLengthBars(parseInt(e.target.value))} 
+                    className="w-full h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider"
+                    disabled={!gapsEnabled}
+                  />
+                </div>
+              </div>
+              <p className="text-[9px] sm:text-[10px] text-neutral-500 mt-2 sm:mt-3 bg-neutral-50/60 p-1.5 sm:p-2 rounded-lg">Silence pattern for timing practice</p>
             </div>
-            <p className="text-[10px] text-neutral-500 mt-3 bg-neutral-50/60 p-2 rounded-lg">Silence pattern for timing practice</p>
           </div>
 
-          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm">
-            <div className="text-sm font-medium text-neutral-700 mb-3">Drone</div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-xs text-neutral-600">Enable Drone</label>
-              <input 
-                type="checkbox" 
-                checked={droneEnabled} 
-                onChange={(e) => setDroneEnabled(e.target.checked)} 
-                className="accent-neutral-900"
-              />
+          {/* Drone Section */}
+          <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 col-span-1 sm:col-span-2 lg:col-span-1">
+            <button 
+              onClick={() => toggleSection('drone')}
+              className="flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold text-neutral-700 hover:text-neutral-900 transition-colors lg:cursor-default"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full"></div>
+                <span className="hidden sm:inline lg:inline">Drone</span>
+                <span className="sm:hidden lg:hidden">Drone</span>
+              </div>
+              <span className="text-neutral-400 lg:hidden">
+                {sectionsCollapsed.drone ? '▼' : '▲'}
+              </span>
+            </button>
+            <div className={`transition-all duration-300 overflow-hidden ${
+              sectionsCollapsed.drone ? 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100' : 'max-h-96 opacity-100'
+            }`}>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <label className="text-[10px] sm:text-xs text-neutral-600">Enable Drone</label>
+                <input 
+                  type="checkbox" 
+                  checked={droneEnabled} 
+                  onChange={(e) => setDroneEnabled(e.target.checked)} 
+                  className="w-3 h-3 sm:w-4 sm:h-4 accent-neutral-900"
+                />
+              </div>
+              <div className={`${droneEnabled ? 'opacity-100' : 'opacity-40'}`}>
+                <label className="text-[10px] sm:text-xs text-neutral-600 flex justify-between mb-1 sm:mb-2">
+                  <span>Note</span>
+                  <span className="font-mono font-medium text-neutral-900 text-[9px] sm:text-[10px] bg-neutral-100/60 px-1 sm:px-1.5 py-0.5 rounded">
+                    {getNoteNameFromMidi(droneNote)} ({midiToFreq(droneNote).toFixed(1)} Hz)
+                  </span>
+                </label>
+                <input 
+                  type="range" 
+                  min={21}  // A0
+                  max={48}  // C3
+                  value={droneNote} 
+                  onChange={(e) => setDroneNote(parseInt(e.target.value))} 
+                  className="w-full mb-1 sm:mb-2 h-2 bg-neutral-200/60 rounded-full appearance-none cursor-pointer slider" 
+                  disabled={!droneEnabled}
+                />
+                <div className="flex justify-between text-[8px] sm:text-[10px] text-neutral-500 mb-1 sm:mb-2">
+                  <span>A0</span>
+                  <span className="hidden sm:inline">Bass Range</span>
+                  <span>C3</span>
+                </div>
+                <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
+                  <button onClick={() => setDroneNote(33)} className="text-[9px] sm:text-xs px-1 sm:px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>A1</button>
+                  <button onClick={() => setDroneNote(36)} className="text-[9px] sm:text-xs px-1 sm:px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>C2</button>
+                  <button onClick={() => setDroneNote(40)} className="text-[9px] sm:text-xs px-1 sm:px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>E2</button>
+                  <button onClick={() => setDroneNote(43)} className="text-[9px] sm:text-xs px-1 sm:px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>G2</button>
+                  <button onClick={() => setDroneNote(45)} className="text-[9px] sm:text-xs px-1 sm:px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>A2</button>
+                  <button onClick={() => setDroneNote(48)} className="text-[9px] sm:text-xs px-1 sm:px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>C3</button>
+                </div>
+              </div>
+              <p className="text-[8px] sm:text-[10px] text-neutral-500 mt-2 sm:mt-3 bg-neutral-50/60 p-1.5 sm:p-2 rounded-lg">Bass drone for tonal reference</p>
             </div>
-            <div className={`${droneEnabled ? 'opacity-100' : 'opacity-40'}`}>
-              <label className="text-xs text-neutral-600 flex justify-between">
-                <span>Note</span>
-                <span className="font-mono font-medium text-neutral-900">
-                  {getNoteNameFromMidi(droneNote)} ({midiToFreq(droneNote).toFixed(1)} Hz)
-                </span>
-              </label>
-              <input 
-                type="range" 
-                min={21}  // A0
-                max={48}  // C3
-                value={droneNote} 
-                onChange={(e) => setDroneNote(parseInt(e.target.value))} 
-                className="w-full mt-1 accent-neutral-900" 
-                disabled={!droneEnabled}
-              />
-              <div className="flex justify-between text-[10px] text-neutral-500 mt-1">
-                <span>A0</span>
-                <span>Bass Range</span>
-                <span>C3</span>
-              </div>
-              <div className="flex gap-1 mt-2">
-                <button onClick={() => setDroneNote(33)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>A1</button>
-                <button onClick={() => setDroneNote(34)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>A#1</button>
-                <button onClick={() => setDroneNote(35)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>B1</button>
-                <button onClick={() => setDroneNote(36)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>C2</button>
-                <button onClick={() => setDroneNote(37)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>C#2</button>
-                <button onClick={() => setDroneNote(38)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>D2</button>
-              </div>
-              <div className="flex gap-1 mt-1">
-                <button onClick={() => setDroneNote(39)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>D#2</button>
-                <button onClick={() => setDroneNote(40)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>E2</button>
-                <button onClick={() => setDroneNote(41)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>F2</button>
-                <button onClick={() => setDroneNote(42)} className="text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors" disabled={!droneEnabled}>F#2</button>
-                <button onClick={() => setDroneNote(43)} className="text-xs px-2 py-1.5 rounded-lg bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40" disabled={!droneEnabled}>G2</button>
-                <button onClick={() => setDroneNote(44)} className="text-xs px-2 py-1.5 rounded-lg bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 transition-all duration-200 backdrop-blur-sm border border-neutral-200/40" disabled={!droneEnabled}>G#2</button>
-              </div>
-            </div>
-            <p className="text-[10px] text-neutral-500 mt-3 bg-neutral-50/60 p-2 rounded-lg">Bass drone for tonal reference</p>
           </div>
         </div>
 
         {/* Sequencer */}
-        <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
-              <h2 className="text-sm font-semibold text-neutral-700">Pattern Sequencer</h2>
+        <div className="bg-white/70 backdrop-blur-sm border border-neutral-200/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
+              <h2 className="text-xs sm:text-sm font-semibold text-neutral-700">
+                <span className="hidden sm:inline">Pattern Sequencer</span>
+                <span className="sm:hidden">Sequencer</span>
+              </h2>
             </div>
-            <div className="flex items-center gap-2 text-xs text-neutral-500 bg-neutral-100/40 px-3 py-2 rounded-full backdrop-blur-sm">
-              <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-              <span>Playhead</span>
+            <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-neutral-500 bg-neutral-100/40 px-2 sm:px-3 py-1 sm:py-2 rounded-full backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+              <span className="hidden sm:inline">Playhead</span>
+              <span className="sm:hidden">▶</span>
             </div>
           </div>
           <TrackGrid name="Kick" pattern={kick} setPattern={setKick} colorClass="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25" playhead={uiStep} />
           <TrackGrid name="Snare" pattern={snare} setPattern={setSnare} colorClass="bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/25" playhead={uiStep} />
           <TrackGrid name="Hi-Hat" pattern={hat} setPattern={setHat} colorClass="bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25" playhead={uiStep} />
           <TrackGrid name="Cymbal" pattern={cymbal} setPattern={setCymbal} colorClass="bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25" playhead={uiStep} />
-          <div className="mt-6 pt-6 border-t border-neutral-200/60">
-            <div className="flex items-center gap-2 text-[11px] text-neutral-500 bg-gradient-to-r from-neutral-50/80 to-neutral-100/80 p-3 rounded-2xl backdrop-blur-sm border border-neutral-200/40">
-              <span className="text-lg">💡</span>
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-neutral-200/60">
+            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-neutral-500 bg-gradient-to-r from-neutral-50/80 to-neutral-100/80 p-2 sm:p-3 rounded-xl sm:rounded-2xl backdrop-blur-sm border border-neutral-200/40">
+              <span className="text-sm sm:text-lg">💡</span>
               <div>
-                <strong>Tip:</strong> Enable swing for groove • Use gaps to practice internal timing • Live-edit while playing
+                <strong>Tip:</strong> 
+                <span className="hidden sm:inline"> Enable swing for groove • Use gaps to practice internal timing • Live-edit while playing</span>
+                <span className="sm:hidden"> Touch steps to toggle • Use presets • Live editing</span>
               </div>
             </div>
           </div>
         </div>
 
-        <footer className="mt-8 text-center text-[11px] text-neutral-500">
-          <div className="bg-neutral-100/40 backdrop-blur-sm rounded-2xl p-4 border border-neutral-200/40">
-            <p className="mb-2">Drumcomputer by <strong>Lukas Schönsgibl</strong> • <a href="https://schoensgibl.com" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-700 transition-colors">schoensgibl.com</a></p>
-            <p className="mb-2">Vibe Coded with Claude</p>
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2">
-                <kbd className="px-2 py-1 bg-white/70 text-neutral-700 rounded-lg text-[10px] font-mono border border-neutral-200/60 shadow-sm">Space</kbd>
-                <span>Start/Stop</span>
+        <footer className="mt-4 sm:mt-6 md:mt-8 text-center text-[10px] sm:text-[11px] text-neutral-500">
+          <div className="bg-neutral-100/40 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-neutral-200/40">
+            <p className="mb-1 sm:mb-2">Drumcomputer by <strong>Lukas Schönsgibl</strong> • <a href="https://schoensgibl.com" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-700 transition-colors">schoensgibl.com</a></p>
+            <p className="mb-2 sm:mb-2">Vibe Coded with Claude</p>
+            <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/70 text-neutral-700 rounded text-[9px] sm:text-[10px] font-mono border border-neutral-200/60 shadow-sm">Space</kbd>
+                <span className="text-[9px] sm:text-[10px]">Start/Stop</span>
               </div>
-              <div className="flex items-center gap-2">
-                <kbd className="px-2 py-1 bg-white/70 text-neutral-700 rounded-lg text-[10px] font-mono border border-neutral-200/60 shadow-sm">T</kbd>
-                <span>Tap Tempo</span>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/70 text-neutral-700 rounded text-[9px] sm:text-[10px] font-mono border border-neutral-200/60 shadow-sm">T</kbd>
+                <span className="text-[9px] sm:text-[10px]">Tap Tempo</span>
               </div>
             </div>
           </div>

@@ -35,15 +35,90 @@
   }
 }
 
-/* Smooth animations */
-* {
-  transition-property: transform, opacity, box-shadow, background-color, border-color;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+/* Smooth animations for desktop only */
+@media (min-width: 641px) {
+  * {
+    transition-property: transform, opacity, box-shadow, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.15s;
+  }
+}
+
+/* Touch-specific optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Ensure buttons are touch-friendly */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Special handling for sequencer grid on very small screens */
+  @media (max-width: 480px) {
+    .grid {
+      gap: 0.125rem !important; /* Even smaller gaps on tiny screens */
+    }
+    
+    /* Ultra-compact mode for 32+ steps */
+    button[aria-label*="step"] {
+      min-width: 0 !important;
+      width: 100% !important;
+      min-height: 28px !important;
+      font-size: 0 !important; /* Hide any text content */
+    }
+  }
+  
+  /* Remove hover states that don't work on touch */
+  .hover\:bg-neutral-200\/80:hover {
+    background-color: rgb(229 229 229 / 0.8);
+  }
+  
+  /* Optimize grid for touch */
+  .grid {
+    gap: 0.25rem; /* Smaller default gap for touch */
+  }
+}
+
+/* Prevent overscroll on mobile */
+@media (max-width: 640px) {
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Optimize scrolling performance */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+  }
 }
 
 /* Backdrop blur fallback */
 @supports not (backdrop-filter: blur(12px)) {
   .backdrop-blur-sm {
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.85);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .border-neutral-200\/60 {
+    border-color: rgb(115 115 115 / 0.8);
+  }
+  
+  .text-neutral-500 {
+    color: rgb(64 64 64);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-pulse {
+    animation: none;
   }
 }
