@@ -133,6 +133,19 @@ export default function Drumcomputer() {
 
   // Mobile bar navigation for sequencer
   const [activeMobileBar, setActiveMobileBar] = useState(0);
+  
+  // Real mobile detection based on screen size
+  const [isMobileDevice, setIsMobileDevice] = useState(() => window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const newIsMobile = window.innerWidth < 1024;
+      setIsMobileDevice(newIsMobile);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleSection = (section) => {
     setSectionsCollapsed(prev => ({
@@ -598,7 +611,7 @@ export default function Drumcomputer() {
   };
 
   // Simple step grid component with mobile bar tabs
-  const TrackGrid = ({ name, pattern, setPattern, colorClass, playhead }) => {
+  const TrackGrid = ({ name, pattern, setPattern, colorClass, playhead, isMobileDevice }) => {
     // Calculate actual playhead position based on current bars
     const displayPlayhead = isPlaying ? playhead : -1;
     
@@ -607,7 +620,7 @@ export default function Drumcomputer() {
     };
 
     // Mobile: Show only current bar, Desktop: Show all bars
-    const isMobile = pattern.length > 16; // More than 1 bar = use mobile tabs
+    const isMobile = isMobileDevice; // Use real device detection
     const currentBarPattern = isMobile 
       ? pattern.slice(activeMobileBar * STEPS_PER_BAR, (activeMobileBar + 1) * STEPS_PER_BAR)
       : pattern;
@@ -1001,10 +1014,10 @@ export default function Drumcomputer() {
               <span className="sm:hidden">▶</span>
             </div>
           </div>
-          <TrackGrid name="Kick" pattern={kick} setPattern={setKick} colorClass="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25" playhead={uiStep} />
-          <TrackGrid name="Snare" pattern={snare} setPattern={setSnare} colorClass="bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/25" playhead={uiStep} />
-          <TrackGrid name="Hi-Hat" pattern={hat} setPattern={setHat} colorClass="bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25" playhead={uiStep} />
-          <TrackGrid name="Cymbal" pattern={cymbal} setPattern={setCymbal} colorClass="bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25" playhead={uiStep} />
+          <TrackGrid name="Kick" pattern={kick} setPattern={setKick} colorClass="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25" playhead={uiStep} isMobileDevice={isMobileDevice} />
+          <TrackGrid name="Snare" pattern={snare} setPattern={setSnare} colorClass="bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/25" playhead={uiStep} isMobileDevice={isMobileDevice} />
+          <TrackGrid name="Hi-Hat" pattern={hat} setPattern={setHat} colorClass="bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/25" playhead={uiStep} isMobileDevice={isMobileDevice} />
+          <TrackGrid name="Cymbal" pattern={cymbal} setPattern={setCymbal} colorClass="bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25" playhead={uiStep} isMobileDevice={isMobileDevice} />
           <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-neutral-200/60">
             <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-neutral-500 bg-gradient-to-r from-neutral-50/80 to-neutral-100/80 p-2 sm:p-3 rounded-xl sm:rounded-2xl backdrop-blur-sm border border-neutral-200/40">
               <span className="text-sm sm:text-lg">💡</span>
