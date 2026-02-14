@@ -1,4 +1,4 @@
-import Drumcomputer from './Drumcomputer'
+import Drumcomputer from './components/Drumcomputer'
 
 function App() {
   return <Drumcomputer />
