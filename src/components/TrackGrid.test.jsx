@@ -124,25 +124,25 @@ describe('TrackGrid', () => {
 
   it('shows Copy button on desktop', () => {
     render(<TrackGrid {...defaultProps} onCopy={vi.fn()} />);
-    expect(screen.getByTitle('Copy track')).toBeInTheDocument();
+    expect(screen.getByTitle('Track-Pattern kopieren')).toBeInTheDocument();
   });
 
   it('shows Paste button when clipboard has data', () => {
     render(<TrackGrid {...defaultProps} onPaste={vi.fn()} hasClipboard={true} />);
-    expect(screen.getByTitle('Paste track')).toBeInTheDocument();
+    expect(screen.getByTitle('Kopiertes Pattern einfügen')).toBeInTheDocument();
   });
 
   it('calls onCopy when C button clicked', () => {
     const onCopy = vi.fn();
     render(<TrackGrid {...defaultProps} onCopy={onCopy} />);
-    fireEvent.click(screen.getByTitle('Copy track'));
+    fireEvent.click(screen.getByTitle('Track-Pattern kopieren'));
     expect(onCopy).toHaveBeenCalledWith('kick');
   });
 
   it('calls onPaste when P button clicked', () => {
     const onPaste = vi.fn();
     render(<TrackGrid {...defaultProps} onPaste={onPaste} hasClipboard={true} />);
-    fireEvent.click(screen.getByTitle('Paste track'));
+    fireEvent.click(screen.getByTitle('Kopiertes Pattern einfügen'));
     expect(onPaste).toHaveBeenCalledWith('kick');
   });
 });

@@ -104,11 +104,15 @@ export default function useScheduler(audioEngine, patternsRef, mixerRef, trainer
       const ctx2 = audioEngine.getContext();
       if (ctx2) {
         const now = ctx2.currentTime;
+        // outputLatency: delay from audio processing to speaker output.
+        // The user hears a sound scheduled at time T when ctx.currentTime ≈ T + outputLatency.
+        // Delaying the visual by outputLatency keeps highlight and sound in sync.
+        const outputLatency = ctx2.outputLatency || 0;
         const scheduled = scheduleTimesRef.current;
-        // Find the most recently scheduled step whose time has passed
+        // Find the most recently scheduled step that the user can now hear
         let playingStep = null;
         for (let i = scheduled.length - 1; i >= 0; i--) {
-          if (scheduled[i].time <= now) {
+          if (scheduled[i].time + outputLatency <= now) {
             playingStep = scheduled[i].step;
             break;
           }

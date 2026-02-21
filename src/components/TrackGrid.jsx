@@ -58,15 +58,23 @@ const TrackGrid = React.memo(function TrackGrid({
             {onCopy && (
               <button
                 onClick={() => onCopy(trackId)}
-                className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-neutral-100/60 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-200/60 transition-colors hidden sm:inline"
-                title="Copy track"
+                className={`text-[10px] w-6 h-6 rounded-md font-mono font-bold transition-all active:scale-95 hidden sm:flex items-center justify-center ${
+                  darkMode
+                    ? 'bg-neutral-700/80 text-neutral-400 hover:bg-sky-900/60 hover:text-sky-400'
+                    : 'bg-neutral-100/80 text-neutral-400 hover:bg-sky-50 hover:text-sky-600'
+                }`}
+                title="Track-Pattern kopieren"
               >C</button>
             )}
             {onPaste && hasClipboard && (
               <button
                 onClick={() => onPaste(trackId)}
-                className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-neutral-100/60 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-200/60 transition-colors hidden sm:inline"
-                title="Paste track"
+                className={`text-[10px] w-6 h-6 rounded-md font-mono font-bold transition-all active:scale-95 hidden sm:flex items-center justify-center ${
+                  darkMode
+                    ? 'bg-sky-800/80 text-sky-300 hover:bg-sky-700/80'
+                    : 'bg-sky-100 text-sky-600 hover:bg-sky-200'
+                }`}
+                title="Kopiertes Pattern einfügen"
               >P</button>
             )}
           </div>
