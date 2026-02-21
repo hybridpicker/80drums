@@ -27,13 +27,13 @@ function noiseSource(ctx, type) {
 }
 
 // velocity: 1 = normal, 2 = accent (1.5x)
-function velGain(velocity) {
+export function velGain(velocity) {
   return velocity === 2 ? 1.5 : 1.0;
 }
 
 // Per-voice params: { tune: 0 (semitones), decay: 1.0 (multiplier) }
-function getTune(params) { return params?.tune ? Math.pow(2, params.tune / 12) : 1.0; }
-function getDecay(params) { return params?.decay ?? 1.0; }
+export function getTune(params) { return params?.tune ? Math.pow(2, params.tune / 12) : 1.0; }
+export function getDecay(params) { return params?.decay ?? 1.0; }
 
 export function triggerKick(ctx, dest, time, velocity = 1, params) {
   const v = velGain(velocity);
