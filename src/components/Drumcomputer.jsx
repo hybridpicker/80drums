@@ -7,9 +7,6 @@ import useTimingTrainer from '../hooks/useTimingTrainer';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import useTapTempo from '../hooks/useTapTempo';
 import TrackGrid from './TrackGrid';
-import GroovePresets from './GroovePresets';
-import TempoSwing from './TempoSwing';
-import LoopSettings from './LoopSettings';
 import TimingTrainer from './TimingTrainer';
 import DroneSection from './DroneSection';
 import PatternManager from './PatternManager';
@@ -49,9 +46,7 @@ export default function Drumcomputer() {
   const [swing, setSwing] = useState(initialState.swing);
   const [isMobileDevice, setIsMobileDevice] = useState(() => window.innerWidth < 1024);
   const [activeMobileBar, setActiveMobileBar] = useState(0);
-  const [sectionsCollapsed, setSectionsCollapsed] = useState({
-    grooves: true, tempo: true, loop: true, trainer: true, drone: true, patterns: true, effects: true,
-  });
+  const [showTools, setShowTools] = useState(false);
 
   // ── Patterns (8 tracks, 3-level velocity: 0=off, 1=normal, 2=accent) ──
   const [patterns, setPatterns] = useState(() => initialState.patterns);
@@ -295,11 +290,6 @@ export default function Drumcomputer() {
     setMixer(prev => ({ ...prev, [trackId]: { ...prev[trackId], solo: !prev[trackId].solo } }));
   }, []);
 
-  // ── Section Toggle ──
-  const toggleSection = useCallback((section) => {
-    setSectionsCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
-  }, []);
-
   // ── Auto-save on state change ──
   useEffect(() => {
     autoSave({ patterns, bpm, swing, bars, mixer, droneEnabled, droneNote });
@@ -386,23 +376,21 @@ export default function Drumcomputer() {
   return (
     <div className={`min-h-screen w-full bg-gradient-to-br ${bgGradient} ${textPrimary} p-3 sm:p-4 md:p-6 transition-colors duration-500`}>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="mb-4 sm:mb-6 md:mb-8">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center ${
+
+        {/* Header — minimal */}
+        <header className="mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${
               dm ? 'bg-gradient-to-br from-neutral-100 via-neutral-200 to-neutral-300' : 'bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-700'
             }`}>
-              <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${dm ? 'bg-neutral-900/90' : 'bg-white/90'}`}></div>
+              <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${dm ? 'bg-neutral-900/90' : 'bg-white/90'}`}></div>
             </div>
-            <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
+            <h1 className={`text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
               dm ? 'from-neutral-100 via-neutral-200 to-neutral-400' : 'from-neutral-900 via-neutral-800 to-neutral-600'
-            }`}>
-              Drumcomputer
-            </h1>
-            <span className={`px-2 py-1 text-xs rounded-full font-medium border hidden sm:inline ${
+            }`}>Drumcomputer</h1>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-medium border hidden sm:inline ${
               dm ? 'bg-neutral-800/80 text-neutral-400 border-neutral-700/50' : 'bg-neutral-100/80 text-neutral-600 border-neutral-200/50'
             }`}>80s/90s</span>
-            {/* Dark mode + Metronome toggles */}
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
               <button
                 onClick={() => setMetronomeEnabled(m => !m)}
@@ -428,201 +416,114 @@ export default function Drumcomputer() {
               )}
             </div>
           </div>
-          <p className={`text-xs sm:text-sm ${textSecondary}`}>
-            <span className="hidden sm:inline">8 Tracks • Live editing • Swing • Timing Trainer • </span>{totalSteps} steps
-          </p>
         </header>
 
-        {/* Control Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
-
-          {/* Grooves + Transport */}
-          <div className={cardClass}>
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
+        {/* Transport + Controls — compact single card */}
+        <div className={`${cardClass} mb-3 sm:mb-4`}>
+          {/* Row 1: Transport + sliders + bars + tools toggle */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+            {/* Transport buttons */}
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
-                onClick={() => toggleSection('grooves')}
-                className={`flex items-center gap-2 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
+                onClick={transport.handleTapTempo}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-95 ${
+                  transport.tapActive
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-neutral-900 shadow-lg shadow-yellow-400/25'
+                    : dm ? 'bg-neutral-700/80 hover:bg-neutral-600/80 text-neutral-300' : 'bg-neutral-100/80 hover:bg-neutral-200/80 text-neutral-700'
+                }`}
+                title={`Tap tempo (T)${transport.tapTimes.length > 0 ? ` - ${transport.tapTimes.length} taps` : ''}`}
               >
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full"></div>
-                <span>Grooves</span>
-                <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.grooves ? '▼' : '▲'}</span>
+                Tap{transport.tapTimes.length > 0 && <span className="text-[10px] ml-1">({transport.tapTimes.length})</span>}
               </button>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <button
-                  onClick={transport.handleTapTempo}
-                  className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-2xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-95 ${
-                    transport.tapActive
-                      ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-neutral-900 shadow-lg shadow-yellow-400/25"
-                      : "bg-neutral-100/80 hover:bg-neutral-200/80 text-neutral-700 backdrop-blur-sm"
-                  }`}
-                  title={`Tap tempo (T)${transport.tapTimes.length > 0 ? ` - ${transport.tapTimes.length} taps` : ''}`}
-                >
-                  <span className="sm:hidden">T</span>
-                  <span className="hidden sm:inline">Tap {transport.tapTimes.length > 0 && `(${transport.tapTimes.length})`}</span>
-                </button>
-                <button
-                  onClick={scheduler.handleToggle}
-                  className={`px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-2xl text-sm sm:text-base font-semibold transition-all duration-200 active:scale-95 ${
-                    scheduler.isPlaying
-                      ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
-                      : "bg-gradient-to-r from-neutral-900 to-neutral-800 text-white hover:from-neutral-800 hover:to-neutral-700 shadow-lg shadow-neutral-900/25"
-                  }`}
-                  title="Start/Stop (Space)"
-                >
-                  {scheduler.isPlaying ? "Stop" : "Start"}
-                </button>
-              </div>
+              <button
+                onClick={scheduler.handleToggle}
+                className={`px-4 sm:px-7 py-1.5 sm:py-2.5 rounded-lg sm:rounded-2xl text-sm sm:text-base font-semibold transition-all duration-200 active:scale-95 ${
+                  scheduler.isPlaying
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25'
+                    : 'bg-gradient-to-r from-neutral-900 to-neutral-800 text-white hover:from-neutral-800 hover:to-neutral-700 shadow-lg shadow-neutral-900/25'
+                }`}
+                title="Start/Stop (Space)"
+              >{scheduler.isPlaying ? 'Stop' : 'Start'}</button>
             </div>
-            <GroovePresets
-              onLoadPreset={loadPreset} onClear={clearAll}
-              collapsed={sectionsCollapsed.grooves}
-            />
+
+            <div className={`w-px h-6 hidden sm:block shrink-0 ${dm ? 'bg-neutral-600/60' : 'bg-neutral-200/60'}`}></div>
+
+            {/* BPM */}
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-none sm:w-52">
+              <span className={`text-[10px] sm:text-xs shrink-0 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>BPM</span>
+              <input
+                type="range" min={50} max={220} value={bpm}
+                onChange={(e) => setBpm(parseInt(e.target.value))}
+                className="flex-1 slider"
+              />
+              <span className={`font-mono text-xs font-bold shrink-0 w-12 text-center px-1.5 py-0.5 rounded ${dm ? 'bg-neutral-700/60 text-neutral-200' : 'bg-neutral-100/60 text-neutral-900'}`}>{bpm}</span>
+            </div>
+
+            {/* Swing */}
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-none sm:w-40">
+              <span className={`text-[10px] sm:text-xs shrink-0 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>Swing</span>
+              <input
+                type="range" min={0} max={60} value={swing}
+                onChange={(e) => setSwing(parseInt(e.target.value))}
+                className="flex-1 slider"
+              />
+              <span className={`font-mono text-xs font-bold shrink-0 w-10 text-center px-1.5 py-0.5 rounded ${dm ? 'bg-neutral-700/60 text-neutral-200' : 'bg-neutral-100/60 text-neutral-900'}`}>{swing}%</span>
+            </div>
+
+            {/* Bars */}
+            <div className="flex items-center gap-1 shrink-0">
+              <span className={`text-[10px] sm:text-xs mr-0.5 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>Bars</span>
+              {[1, 2, 3, 4].map(b => (
+                <button
+                  key={b}
+                  onClick={() => setBars(b)}
+                  className={`w-7 h-7 text-xs rounded-lg font-semibold transition-all duration-200 active:scale-95 ${
+                    bars === b
+                      ? dm ? 'bg-neutral-100 text-neutral-900' : 'bg-neutral-900 text-white shadow-sm'
+                      : dm ? 'bg-neutral-700/60 text-neutral-400 hover:bg-neutral-600/60' : 'bg-neutral-100/60 text-neutral-600 hover:bg-neutral-200/60'
+                  }`}
+                >{b}</button>
+              ))}
+            </div>
+
+            {/* Tools toggle */}
+            <button
+              onClick={() => setShowTools(t => !t)}
+              className={`ml-auto text-xs px-2.5 py-1.5 rounded-lg border transition-all duration-200 shrink-0 font-medium ${
+                showTools
+                  ? dm ? 'bg-neutral-600/80 text-neutral-200 border-neutral-500/60' : 'bg-neutral-200/80 text-neutral-800 border-neutral-300/60'
+                  : dm ? 'bg-neutral-700/60 text-neutral-400 border-neutral-600/40 hover:bg-neutral-600/60' : 'bg-neutral-100/60 text-neutral-600 border-neutral-200/40 hover:bg-neutral-200/60'
+              }`}
+            >{showTools ? 'Tools ▲' : 'Tools ▼'}</button>
           </div>
 
-          {/* Tempo & Swing */}
-          <div className={cardClass}>
+          {/* Row 2: Groove presets — horizontal scrollable */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+            {Object.keys(presets).map(name => (
+              <button
+                key={name}
+                onClick={() => loadPreset(name)}
+                className={`text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium transition-all duration-200 whitespace-nowrap shrink-0 border ${
+                  dm ? 'bg-neutral-700/60 hover:bg-neutral-600/60 text-neutral-300 border-neutral-600/40' : 'bg-neutral-100/60 hover:bg-neutral-200/60 text-neutral-700 border-neutral-200/40'
+                }`}
+              >{name}</button>
+            ))}
+            <div className={`w-px h-4 mx-0.5 shrink-0 ${dm ? 'bg-neutral-600/60' : 'bg-neutral-200/60'}`}></div>
             <button
-              onClick={() => toggleSection('tempo')}
-              className={`flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full"></div>
-                <span className="hidden sm:inline lg:inline">Tempo & Swing</span>
-                <span className="sm:hidden lg:hidden">Tempo</span>
-              </div>
-              <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.tempo ? '▼' : '▲'}</span>
-            </button>
-            <TempoSwing bpm={bpm} swing={swing} onBpmChange={setBpm} onSwingChange={setSwing} collapsed={sectionsCollapsed.tempo} />
-          </div>
-
-          {/* Loop */}
-          <div className={cardClass}>
-            <button
-              onClick={() => toggleSection('loop')}
-              className={`flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full"></div>
-                <span>Loop</span>
-              </div>
-              <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.loop ? '▼' : '▲'}</span>
-            </button>
-            <LoopSettings bars={bars} onBarsChange={setBars} collapsed={sectionsCollapsed.loop} />
-          </div>
-
-          {/* Timing Trainer */}
-          <div className={`${dm ? 'bg-neutral-800/70' : 'bg-white/70'} backdrop-blur-sm border rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 ${
-            isCurrentlyInSilence ? 'border-amber-300/50 ring-2 ring-amber-300/50' : (dm ? 'border-neutral-700/60' : 'border-neutral-200/60')
-          }`}>
-            <button
-              onClick={() => toggleSection('trainer')}
-              className={`flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-amber-500 rounded-full"></div>
-                <span className="hidden sm:inline lg:inline">Timing Trainer</span>
-                <span className="sm:hidden lg:hidden">Trainer</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {trainerHook.trainerMode && (
-                  <span className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    isCurrentlyInSilence
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-neutral-100 text-neutral-600'
-                  }`}>
-                    {trainerStatus.text}
-                  </span>
-                )}
-                <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.trainer ? '▼' : '▲'}</span>
-              </div>
-            </button>
-            <TimingTrainer
-              trainerMode={trainerHook.trainerMode}
-              customPlay={trainerHook.customPlay}
-              customSilence={trainerHook.customSilence}
-              fadePhase={trainerHook.fadePhase}
-              onToggleMode={trainerHook.toggleMode}
-              onCustomPlayChange={trainerHook.setCustomPlay}
-              onCustomSilenceChange={trainerHook.setCustomSilence}
-              statusBadge={trainerStatus}
-              collapsed={sectionsCollapsed.trainer}
-            />
-          </div>
-
-          {/* Drone */}
-          <div className={cardClass}>
-            <button
-              onClick={() => toggleSection('drone')}
-              className={`flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full"></div>
-                <span>Drone</span>
-              </div>
-              <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.drone ? '▼' : '▲'}</span>
-            </button>
-            <DroneSection
-              droneEnabled={droneEnabled} droneNote={droneNote}
-              onToggle={setDroneEnabled} onNoteChange={setDroneNote}
-              collapsed={sectionsCollapsed.drone}
-            />
-          </div>
-
-          {/* Patterns (Save/Load/Share/Export) */}
-          <div className={cardClass}>
-            <button
-              onClick={() => toggleSection('patterns')}
-              className={`flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-500 rounded-full"></div>
-                <span>Patterns</span>
-              </div>
-              <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.patterns ? '▼' : '▲'}</span>
-            </button>
-            <PatternManager
-              onSave={handleSaveSlot}
-              onLoad={handleLoadSlot}
-              onShare={handleShare}
-              onExport={handleExportWav}
-              collapsed={sectionsCollapsed.patterns}
-            />
+              onClick={clearAll}
+              className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium transition-all duration-200 whitespace-nowrap shrink-0 border border-red-200/60 hover:bg-red-50/60 text-red-500"
+            >Clear</button>
           </div>
         </div>
 
-        {/* Effects Panel */}
-        <div className={`${cardClass} mb-4 sm:mb-6 md:mb-8`}>
-          <button
-            onClick={() => toggleSection('effects')}
-            className={`flex items-center justify-between w-full mb-3 sm:mb-4 text-xs sm:text-sm font-semibold ${sectionLabel} hover:opacity-80 transition-colors lg:cursor-default`}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-fuchsia-500 rounded-full"></div>
-              <span>Effects & Sound Design</span>
-            </div>
-            <span className="text-neutral-400 lg:hidden">{sectionsCollapsed.effects ? '▼' : '▲'}</span>
-          </button>
-          <EffectsPanel
-            reverbMix={reverbMix}
-            onReverbChange={setReverbMix}
-            compThreshold={compThreshold}
-            compRatio={compRatio}
-            onCompThresholdChange={setCompThreshold}
-            onCompRatioChange={setCompRatio}
-            voiceParams={voiceParams}
-            onVoiceParamChange={handleVoiceParamChange}
-            collapsed={sectionsCollapsed.effects}
-          />
-        </div>
-
-        {/* Sequencer */}
+        {/* SEQUENCER — main focus */}
         <div className={`${dm ? 'bg-neutral-800/70' : 'bg-white/70'} backdrop-blur-sm border rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 ${
           isCurrentlyInSilence ? 'ring-2 ring-amber-300/50 border-amber-200/60' : (dm ? 'border-neutral-700/60' : 'border-neutral-200/60')
         }`}>
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-5">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
-              <h2 className="text-xs sm:text-sm font-semibold text-neutral-700">
+              <h2 className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>
                 <span className="hidden sm:inline">Pattern Sequencer</span>
                 <span className="sm:hidden">Sequencer</span>
               </h2>
@@ -633,11 +534,11 @@ export default function Drumcomputer() {
                   🎧 Dein Turn
                 </span>
               ) : trainerHook.trainerMode && scheduler.isPlaying ? (
-                <span className="text-[10px] sm:text-xs text-neutral-500 bg-neutral-100/40 px-2 py-1 rounded-full">
+                <span className={`text-[10px] sm:text-xs ${textSecondary} bg-neutral-100/40 px-2 py-1 rounded-full`}>
                   🔊 Listen
                 </span>
               ) : null}
-              <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-neutral-500 bg-neutral-100/40 px-2 sm:px-3 py-1 sm:py-2 rounded-full backdrop-blur-sm">
+              <div className={`flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs ${textSecondary} bg-neutral-100/40 px-2 sm:px-3 py-1 sm:py-2 rounded-full backdrop-blur-sm`}>
                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full animate-pulse"></span>
                 <span className="hidden sm:inline">Playhead</span>
                 <span className="sm:hidden">▶</span>
@@ -675,23 +576,103 @@ export default function Drumcomputer() {
             />
           ))}
 
-          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-neutral-200/60">
-            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-neutral-500 bg-gradient-to-r from-neutral-50/80 to-neutral-100/80 p-2 sm:p-3 rounded-xl sm:rounded-2xl backdrop-blur-sm border border-neutral-200/40">
+          <div className={`mt-4 sm:mt-6 pt-4 sm:pt-6 border-t ${dm ? 'border-neutral-700/60' : 'border-neutral-200/60'}`}>
+            <div className={`flex items-center gap-2 text-[10px] sm:text-[11px] ${textSecondary} bg-gradient-to-r ${dm ? 'from-neutral-700/60 to-neutral-800/60' : 'from-neutral-50/80 to-neutral-100/80'} p-2 sm:p-3 rounded-xl sm:rounded-2xl backdrop-blur-sm border ${dm ? 'border-neutral-700/40' : 'border-neutral-200/40'}`}>
               <span className="text-sm sm:text-lg">💡</span>
               <div>
                 <strong>Tip:</strong>
                 <span className="hidden sm:inline"> Click = On, Click again = Accent, Click again = Off • Enable Timing Trainer (G) for gap practice</span>
-                <span className="sm:hidden"> Tap: Off → On → Accent → Off • Use presets</span>
+                <span className="sm:hidden"> Tap: Off → On → Accent → Off</span>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Tools Panel — collapsible, below sequencer */}
+        {showTools && (
+          <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* Timing Trainer */}
+              <div className={`${dm ? 'bg-neutral-800/70' : 'bg-white/70'} backdrop-blur-sm border rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm transition-all duration-200 ${
+                isCurrentlyInSilence ? 'border-amber-300/50 ring-2 ring-amber-300/50' : (dm ? 'border-neutral-700/60' : 'border-neutral-200/60')
+              }`}>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-amber-500 rounded-full"></div>
+                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Timing Trainer</span>
+                  {trainerHook.trainerMode && (
+                    <span className={`ml-auto text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      isCurrentlyInSilence ? 'bg-amber-100 text-amber-700' : (dm ? 'bg-neutral-700 text-neutral-300' : 'bg-neutral-100 text-neutral-600')
+                    }`}>{trainerStatus.text}</span>
+                  )}
+                </div>
+                <TimingTrainer
+                  trainerMode={trainerHook.trainerMode}
+                  customPlay={trainerHook.customPlay}
+                  customSilence={trainerHook.customSilence}
+                  fadePhase={trainerHook.fadePhase}
+                  onToggleMode={trainerHook.toggleMode}
+                  onCustomPlayChange={trainerHook.setCustomPlay}
+                  onCustomSilenceChange={trainerHook.setCustomSilence}
+                  statusBadge={trainerStatus}
+                  collapsed={false}
+                />
+              </div>
+
+              {/* Drone */}
+              <div className={cardClass}>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full"></div>
+                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Drone</span>
+                </div>
+                <DroneSection
+                  droneEnabled={droneEnabled} droneNote={droneNote}
+                  onToggle={setDroneEnabled} onNoteChange={setDroneNote}
+                  collapsed={false}
+                />
+              </div>
+
+              {/* Patterns */}
+              <div className={cardClass}>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-500 rounded-full"></div>
+                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Patterns</span>
+                </div>
+                <PatternManager
+                  onSave={handleSaveSlot}
+                  onLoad={handleLoadSlot}
+                  onShare={handleShare}
+                  onExport={handleExportWav}
+                  collapsed={false}
+                />
+              </div>
+            </div>
+
+            {/* Effects — full width */}
+            <div className={cardClass}>
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-fuchsia-500 rounded-full"></div>
+                <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Effects & Sound Design</span>
+              </div>
+              <EffectsPanel
+                reverbMix={reverbMix}
+                onReverbChange={setReverbMix}
+                compThreshold={compThreshold}
+                compRatio={compRatio}
+                onCompThresholdChange={setCompThreshold}
+                onCompRatioChange={setCompRatio}
+                voiceParams={voiceParams}
+                onVoiceParamChange={handleVoiceParamChange}
+                collapsed={false}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <footer className={`mt-4 sm:mt-6 md:mt-8 text-center text-[10px] sm:text-[11px] ${textSecondary}`}>
           <div className={`${dm ? 'bg-neutral-800/40 border-neutral-700/40' : 'bg-neutral-100/40 border-neutral-200/40'} backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border`}>
             <p className="mb-1 sm:mb-2">Drumcomputer by <strong>Lukas Schönsgibl</strong> • <a href="https://schoensgibl.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">schoensgibl.com</a></p>
-            <p className="mb-2">Vibe Coded with Claude</p>
+            <p className="mb-2">Vibe Coded mit Claude</p>
             <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
               {[['Space', 'Start/Stop'], ['T', 'Tap Tempo'], ['G', 'Trainer'], ['D', 'Dark Mode'], ['Cmd+Z', 'Undo']].map(([key, label]) => (
                 <div key={key} className="flex items-center gap-1 sm:gap-2">
