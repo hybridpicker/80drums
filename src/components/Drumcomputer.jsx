@@ -672,7 +672,6 @@ export default function Drumcomputer() {
         <footer className={`mt-4 sm:mt-6 md:mt-8 text-center text-[10px] sm:text-[11px] ${textSecondary}`}>
           <div className={`${dm ? 'bg-neutral-800/40 border-neutral-700/40' : 'bg-neutral-100/40 border-neutral-200/40'} backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border`}>
             <p className="mb-1 sm:mb-2">Drumcomputer by <strong>Lukas Schönsgibl</strong> • <a href="https://schoensgibl.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">schoensgibl.com</a></p>
-            <p className="mb-2">Vibe Coded mit Claude</p>
             <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
               {[['Space', 'Start/Stop'], ['T', 'Tap Tempo'], ['G', 'Trainer'], ['D', 'Dark Mode'], ['Cmd+Z', 'Undo']].map(([key, label]) => (
                 <div key={key} className="flex items-center gap-1 sm:gap-2">
