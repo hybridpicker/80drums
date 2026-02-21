@@ -11,6 +11,8 @@ export default function useScheduler(audioEngine, patternsRef, mixerRef, trainer
   const scheduleTimerRef = useRef(null);
   const rafRef = useRef(0);
   const isPlayingRef = useRef(false);
+  // Track scheduled {step, time} pairs so the visual playhead follows actual audio time
+  const scheduleTimesRef = useRef([]);
 
   const bpmRef = useRef(100);
   const swingRef = useRef(0);
@@ -38,6 +40,12 @@ export default function useScheduler(audioEngine, patternsRef, mixerRef, trainer
       const step = currentStepRef.current % total;
       const swingOffset = swingOffsetForStep(step);
       const t = nextNoteTimeRef.current + swingOffset;
+
+      // Record scheduled time for accurate visual sync
+      scheduleTimesRef.current.push({ step, time: t });
+      if (scheduleTimesRef.current.length > total + 8) {
+        scheduleTimesRef.current = scheduleTimesRef.current.slice(-(total + 8));
+      }
 
       const muted = trainerHook.isInGap(step);
       trainerHook.onStepAdvance(step, total);
@@ -93,7 +101,22 @@ export default function useScheduler(audioEngine, patternsRef, mixerRef, trainer
     setIsPlaying(true);
     scheduleTimerRef.current = setInterval(scheduler, 25);
     const tick = () => {
-      setUiStep(currentStepRef.current % (barsRef.current * STEPS_PER_BAR));
+      const ctx2 = audioEngine.getContext();
+      if (ctx2) {
+        const now = ctx2.currentTime;
+        const scheduled = scheduleTimesRef.current;
+        // Find the most recently scheduled step whose time has passed
+        let playingStep = null;
+        for (let i = scheduled.length - 1; i >= 0; i--) {
+          if (scheduled[i].time <= now) {
+            playingStep = scheduled[i].step;
+            break;
+          }
+        }
+        if (playingStep !== null) setUiStep(playingStep);
+        // Clean up entries older than 0.5s
+        scheduleTimesRef.current = scheduled.filter(s => s.time > now - 0.5);
+      }
       if (isPlayingRef.current) rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);

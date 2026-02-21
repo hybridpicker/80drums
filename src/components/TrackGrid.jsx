@@ -32,15 +32,19 @@ const TrackGrid = React.memo(function TrackGrid({
           <div className="flex items-center gap-1">
             <button
               onClick={() => onMuteToggle(trackId)}
-              className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded font-mono font-bold transition-colors ${
-                mute ? 'bg-red-500 text-white' : 'bg-neutral-100/60 text-neutral-500 hover:bg-neutral-200/60'
+              className={`text-[10px] w-6 h-6 rounded-md font-mono font-bold transition-all active:scale-95 ${
+                mute
+                  ? 'bg-red-500 text-white shadow-sm shadow-red-500/30'
+                  : darkMode ? 'bg-neutral-700/80 text-neutral-400 hover:bg-red-900/60 hover:text-red-400' : 'bg-neutral-100/80 text-neutral-400 hover:bg-red-50 hover:text-red-500'
               }`}
               title="Mute"
             >M</button>
             <button
               onClick={() => onSoloToggle(trackId)}
-              className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded font-mono font-bold transition-colors ${
-                solo ? 'bg-amber-500 text-white' : 'bg-neutral-100/60 text-neutral-500 hover:bg-neutral-200/60'
+              className={`text-[10px] w-6 h-6 rounded-md font-mono font-bold transition-all active:scale-95 ${
+                solo
+                  ? 'bg-amber-400 text-neutral-900 shadow-sm shadow-amber-400/30'
+                  : darkMode ? 'bg-neutral-700/80 text-neutral-400 hover:bg-amber-900/60 hover:text-amber-400' : 'bg-neutral-100/80 text-neutral-400 hover:bg-amber-50 hover:text-amber-600'
               }`}
               title="Solo"
             >S</button>
@@ -48,7 +52,7 @@ const TrackGrid = React.memo(function TrackGrid({
               type="range"
               min={0} max={100} value={volume}
               onChange={(e) => onVolumeChange(trackId, parseInt(e.target.value))}
-              className="w-12 sm:w-16 h-1 slider opacity-60 hover:opacity-100 transition-opacity"
+              className="w-12 sm:w-16 h-1 slider opacity-50 hover:opacity-100 transition-opacity"
               title={`Volume: ${volume}%`}
             />
             {onCopy && (
