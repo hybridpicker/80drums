@@ -105,7 +105,7 @@ const TrackGrid = React.memo(function TrackGrid({
 
       {/* Step Grid */}
       <div
-        className={`grid gap-1 sm:gap-1.5 ${mute ? 'opacity-40' : ''}`}
+        className={`grid gap-1 sm:gap-1.5 mt-3 lg:mt-6 ${mute ? 'opacity-40' : ''}`}
         style={{ gridTemplateColumns: `repeat(${currentBarPattern.length}, minmax(0, 1fr))` }}
       >
         {currentBarPattern.map((value, i) => {
