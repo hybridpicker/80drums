@@ -418,61 +418,35 @@ export default function Drumcomputer() {
           </div>
         </header>
 
-        {/* Transport + Controls — compact single card */}
+        {/* Transport + Controls — 3-row card */}
         <div className={`${cardClass} mb-3 sm:mb-4`}>
-          {/* Row 1: Transport + sliders + bars + tools toggle */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-            {/* Transport buttons */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={transport.handleTapTempo}
-                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-95 ${
-                  transport.tapActive
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-neutral-900 shadow-lg shadow-yellow-400/25'
-                    : dm ? 'bg-neutral-700/80 hover:bg-neutral-600/80 text-neutral-300' : 'bg-neutral-100/80 hover:bg-neutral-200/80 text-neutral-700'
-                }`}
-                title={`Tap tempo (T)${transport.tapTimes.length > 0 ? ` - ${transport.tapTimes.length} taps` : ''}`}
-              >
-                Tap{transport.tapTimes.length > 0 && <span className="text-[10px] ml-1">({transport.tapTimes.length})</span>}
-              </button>
-              <button
-                onClick={scheduler.handleToggle}
-                className={`px-4 sm:px-7 py-1.5 sm:py-2.5 rounded-lg sm:rounded-2xl text-sm sm:text-base font-semibold transition-all duration-200 active:scale-95 ${
-                  scheduler.isPlaying
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25'
-                    : 'bg-gradient-to-r from-neutral-900 to-neutral-800 text-white hover:from-neutral-800 hover:to-neutral-700 shadow-lg shadow-neutral-900/25'
-                }`}
-                title="Start/Stop (Space)"
-              >{scheduler.isPlaying ? 'Stop' : 'Start'}</button>
-            </div>
 
-            <div className={`w-px h-6 hidden sm:block shrink-0 ${dm ? 'bg-neutral-600/60' : 'bg-neutral-200/60'}`}></div>
+          {/* Row 1: Play + Bars + Tools toggle */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-3">
+            <button
+              onClick={transport.handleTapTempo}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 active:scale-95 shrink-0 ${
+                transport.tapActive
+                  ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-neutral-900 shadow-md'
+                  : dm ? 'bg-neutral-700/80 hover:bg-neutral-600/80 text-neutral-300' : 'bg-neutral-100/80 hover:bg-neutral-200/80 text-neutral-700'
+              }`}
+              title={`Tap tempo (T)${transport.tapTimes.length > 0 ? ` – ${transport.tapTimes.length} taps` : ''}`}
+            >Tap{transport.tapTimes.length > 0 && <span className="ml-1 opacity-60">×{transport.tapTimes.length}</span>}</button>
 
-            {/* BPM */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-none sm:w-52">
-              <span className={`text-[10px] sm:text-xs shrink-0 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>BPM</span>
-              <input
-                type="range" min={50} max={220} value={bpm}
-                onChange={(e) => setBpm(parseInt(e.target.value))}
-                className="flex-1 slider"
-              />
-              <span className={`font-mono text-xs font-bold shrink-0 w-12 text-center px-1.5 py-0.5 rounded ${dm ? 'bg-neutral-700/60 text-neutral-200' : 'bg-neutral-100/60 text-neutral-900'}`}>{bpm}</span>
-            </div>
+            <button
+              onClick={scheduler.handleToggle}
+              className={`px-5 sm:px-8 py-1.5 sm:py-2 rounded-2xl text-sm font-semibold transition-all duration-200 active:scale-95 shrink-0 ${
+                scheduler.isPlaying
+                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
+                  : 'bg-gradient-to-r from-neutral-900 to-neutral-800 text-white shadow-lg shadow-neutral-900/25'
+              }`}
+              title="Start/Stop (Space)"
+            >{scheduler.isPlaying ? '■ Stop' : '▶ Start'}</button>
 
-            {/* Swing */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-none sm:w-40">
-              <span className={`text-[10px] sm:text-xs shrink-0 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>Swing</span>
-              <input
-                type="range" min={0} max={60} value={swing}
-                onChange={(e) => setSwing(parseInt(e.target.value))}
-                className="flex-1 slider"
-              />
-              <span className={`font-mono text-xs font-bold shrink-0 w-10 text-center px-1.5 py-0.5 rounded ${dm ? 'bg-neutral-700/60 text-neutral-200' : 'bg-neutral-100/60 text-neutral-900'}`}>{swing}%</span>
-            </div>
+            <div className={`w-px h-5 shrink-0 ${dm ? 'bg-neutral-600/60' : 'bg-neutral-200/60'}`}></div>
 
-            {/* Bars */}
             <div className="flex items-center gap-1 shrink-0">
-              <span className={`text-[10px] sm:text-xs mr-0.5 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>Bars</span>
+              <span className={`text-[10px] sm:text-xs mr-1 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>Bars</span>
               {[1, 2, 3, 4].map(b => (
                 <button
                   key={b}
@@ -486,18 +460,39 @@ export default function Drumcomputer() {
               ))}
             </div>
 
-            {/* Tools toggle */}
             <button
               onClick={() => setShowTools(t => !t)}
-              className={`ml-auto text-xs px-2.5 py-1.5 rounded-lg border transition-all duration-200 shrink-0 font-medium ${
+              className={`ml-auto px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 shrink-0 ${
                 showTools
-                  ? dm ? 'bg-neutral-600/80 text-neutral-200 border-neutral-500/60' : 'bg-neutral-200/80 text-neutral-800 border-neutral-300/60'
-                  : dm ? 'bg-neutral-700/60 text-neutral-400 border-neutral-600/40 hover:bg-neutral-600/60' : 'bg-neutral-100/60 text-neutral-600 border-neutral-200/40 hover:bg-neutral-200/60'
+                  ? dm ? 'bg-neutral-100 text-neutral-900 border-neutral-300' : 'bg-neutral-900 text-white border-neutral-700'
+                  : dm ? 'bg-neutral-700/60 text-neutral-300 border-neutral-600/40 hover:bg-neutral-600/60' : 'bg-neutral-100/60 text-neutral-600 border-neutral-200/40 hover:bg-neutral-200/60'
               }`}
-            >{showTools ? 'Tools ▲' : 'Tools ▼'}</button>
+            >{showTools ? '▲ Tools' : '▼ Tools'}</button>
           </div>
 
-          {/* Row 2: Groove presets — horizontal scrollable */}
+          {/* Row 2: BPM + Swing sliders */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-3">
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] sm:text-xs w-10 shrink-0 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>BPM</span>
+              <input
+                type="range" min={50} max={220} value={bpm}
+                onChange={(e) => setBpm(parseInt(e.target.value))}
+                className="flex-1 slider"
+              />
+              <span className={`font-mono text-xs font-bold w-12 text-right shrink-0 ${dm ? 'text-neutral-200' : 'text-neutral-900'}`}>{bpm}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] sm:text-xs w-10 shrink-0 font-medium ${dm ? 'text-neutral-400' : 'text-neutral-500'}`}>Swing</span>
+              <input
+                type="range" min={0} max={60} value={swing}
+                onChange={(e) => setSwing(parseInt(e.target.value))}
+                className="flex-1 slider"
+              />
+              <span className={`font-mono text-xs font-bold w-12 text-right shrink-0 ${dm ? 'text-neutral-200' : 'text-neutral-900'}`}>{swing}%</span>
+            </div>
+          </div>
+
+          {/* Row 3: Groove presets */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
             {Object.keys(presets).map(name => (
               <button
@@ -508,13 +503,93 @@ export default function Drumcomputer() {
                 }`}
               >{name}</button>
             ))}
-            <div className={`w-px h-4 mx-0.5 shrink-0 ${dm ? 'bg-neutral-600/60' : 'bg-neutral-200/60'}`}></div>
+            <div className={`w-px h-4 mx-1 shrink-0 ${dm ? 'bg-neutral-600/60' : 'bg-neutral-200/60'}`}></div>
             <button
               onClick={clearAll}
               className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium transition-all duration-200 whitespace-nowrap shrink-0 border border-red-200/60 hover:bg-red-50/60 text-red-500"
             >Clear</button>
           </div>
         </div>
+
+        {/* Tools Panel — directly below transport, visible when open */}
+        {showTools && (
+          <div className="mb-3 sm:mb-4 space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* Timing Trainer */}
+              <div className={`${dm ? 'bg-neutral-800/70' : 'bg-white/70'} backdrop-blur-sm border rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm transition-all duration-200 ${
+                isCurrentlyInSilence ? 'border-amber-300/50 ring-2 ring-amber-300/50' : (dm ? 'border-neutral-700/60' : 'border-neutral-200/60')
+              }`}>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Timing Trainer</span>
+                  {trainerHook.trainerMode && (
+                    <span className={`ml-auto text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      isCurrentlyInSilence ? 'bg-amber-100 text-amber-700' : (dm ? 'bg-neutral-700 text-neutral-300' : 'bg-neutral-100 text-neutral-600')
+                    }`}>{trainerStatus.text}</span>
+                  )}
+                </div>
+                <TimingTrainer
+                  trainerMode={trainerHook.trainerMode}
+                  customPlay={trainerHook.customPlay}
+                  customSilence={trainerHook.customSilence}
+                  fadePhase={trainerHook.fadePhase}
+                  onToggleMode={trainerHook.toggleMode}
+                  onCustomPlayChange={trainerHook.setCustomPlay}
+                  onCustomSilenceChange={trainerHook.setCustomSilence}
+                  statusBadge={trainerStatus}
+                  collapsed={false}
+                />
+              </div>
+
+              {/* Drone */}
+              <div className={cardClass}>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Drone</span>
+                </div>
+                <DroneSection
+                  droneEnabled={droneEnabled} droneNote={droneNote}
+                  onToggle={setDroneEnabled} onNoteChange={setDroneNote}
+                  collapsed={false}
+                />
+              </div>
+
+              {/* Patterns */}
+              <div className={cardClass}>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Patterns</span>
+                </div>
+                <PatternManager
+                  onSave={handleSaveSlot}
+                  onLoad={handleLoadSlot}
+                  onShare={handleShare}
+                  onExport={handleExportWav}
+                  collapsed={false}
+                />
+              </div>
+            </div>
+
+            {/* Effects — full width */}
+            <div className={cardClass}>
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <div className="w-2 h-2 bg-fuchsia-500 rounded-full"></div>
+                <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Effects & Sound Design</span>
+              </div>
+              <EffectsPanel
+                reverbMix={reverbMix}
+                onReverbChange={setReverbMix}
+                compThreshold={compThreshold}
+                compRatio={compRatio}
+                onCompThresholdChange={setCompThreshold}
+                onCompRatioChange={setCompRatio}
+                voiceParams={voiceParams}
+                onVoiceParamChange={handleVoiceParamChange}
+                collapsed={false}
+              />
+            </div>
+          </div>
+        )}
 
         {/* SEQUENCER — main focus */}
         <div className={`${dm ? 'bg-neutral-800/70' : 'bg-white/70'} backdrop-blur-sm border rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 ${
@@ -587,86 +662,6 @@ export default function Drumcomputer() {
             </div>
           </div>
         </div>
-
-        {/* Tools Panel — collapsible, below sequencer */}
-        {showTools && (
-          <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              {/* Timing Trainer */}
-              <div className={`${dm ? 'bg-neutral-800/70' : 'bg-white/70'} backdrop-blur-sm border rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-sm transition-all duration-200 ${
-                isCurrentlyInSilence ? 'border-amber-300/50 ring-2 ring-amber-300/50' : (dm ? 'border-neutral-700/60' : 'border-neutral-200/60')
-              }`}>
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-amber-500 rounded-full"></div>
-                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Timing Trainer</span>
-                  {trainerHook.trainerMode && (
-                    <span className={`ml-auto text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      isCurrentlyInSilence ? 'bg-amber-100 text-amber-700' : (dm ? 'bg-neutral-700 text-neutral-300' : 'bg-neutral-100 text-neutral-600')
-                    }`}>{trainerStatus.text}</span>
-                  )}
-                </div>
-                <TimingTrainer
-                  trainerMode={trainerHook.trainerMode}
-                  customPlay={trainerHook.customPlay}
-                  customSilence={trainerHook.customSilence}
-                  fadePhase={trainerHook.fadePhase}
-                  onToggleMode={trainerHook.toggleMode}
-                  onCustomPlayChange={trainerHook.setCustomPlay}
-                  onCustomSilenceChange={trainerHook.setCustomSilence}
-                  statusBadge={trainerStatus}
-                  collapsed={false}
-                />
-              </div>
-
-              {/* Drone */}
-              <div className={cardClass}>
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full"></div>
-                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Drone</span>
-                </div>
-                <DroneSection
-                  droneEnabled={droneEnabled} droneNote={droneNote}
-                  onToggle={setDroneEnabled} onNoteChange={setDroneNote}
-                  collapsed={false}
-                />
-              </div>
-
-              {/* Patterns */}
-              <div className={cardClass}>
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-500 rounded-full"></div>
-                  <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Patterns</span>
-                </div>
-                <PatternManager
-                  onSave={handleSaveSlot}
-                  onLoad={handleLoadSlot}
-                  onShare={handleShare}
-                  onExport={handleExportWav}
-                  collapsed={false}
-                />
-              </div>
-            </div>
-
-            {/* Effects — full width */}
-            <div className={cardClass}>
-              <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-fuchsia-500 rounded-full"></div>
-                <span className={`text-xs sm:text-sm font-semibold ${sectionLabel}`}>Effects & Sound Design</span>
-              </div>
-              <EffectsPanel
-                reverbMix={reverbMix}
-                onReverbChange={setReverbMix}
-                compThreshold={compThreshold}
-                compRatio={compRatio}
-                onCompThresholdChange={setCompThreshold}
-                onCompRatioChange={setCompRatio}
-                voiceParams={voiceParams}
-                onVoiceParamChange={handleVoiceParamChange}
-                collapsed={false}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         <footer className={`mt-4 sm:mt-6 md:mt-8 text-center text-[10px] sm:text-[11px] ${textSecondary}`}>

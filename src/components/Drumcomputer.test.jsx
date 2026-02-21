@@ -37,7 +37,7 @@ describe('Drumcomputer (smoke test)', () => {
 
   it('shows Start button', () => {
     render(<Drumcomputer />);
-    expect(screen.getByText('Start')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Start/ })).toBeInTheDocument();
   });
 
   it('renders all 8 track names', () => {
